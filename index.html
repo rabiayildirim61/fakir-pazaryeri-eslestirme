@@ -227,28 +227,34 @@
             return "";
         }
 
-        window.manuelEsleKaydet = async function(tKodKey) {
-            const selectEl = document.getElementById(`select-${tKodKey}`);
+        window.manuelEsleKaydet = async function(tIdx) {
+            let row = tsoftData[tIdx];
+            let tKod = String(kolonDegeriBul(row, ['web servis kodu', 'stok kodu', 'sku', 'stokkodu', 'tedarikçi stok kodu'])).trim();
+            let tBarkod = String(kolonDegeriBul(row, ['barkod', 'barcode'])).trim();
+            let tIsim = String(kolonDegeriBul(row, ['ürün adı', 'urun adi', 'title', 'product name'])).trim();
+            let tUniqueKey = tKod || tBarkod || tIsim;
+
+            const selectEl = document.getElementById(`select-${tIdx}`);
             if(!selectEl || selectEl.value === "") {
                 alert("Lütfen pazar yerinden ilgili ürünü seçin.");
                 return;
             }
             
             const secilenPazarIndex = selectEl.value;
-            manuelEslesmeler[aktifPazar][tKodKey] = secilenPazarIndex;
-            if (acilacakUrunler[aktifPazar][tKodKey]) delete acilacakUrunler[aktifPazar][tKodKey];
+            manuelEslesmeler[aktifPazar][tUniqueKey] = secilenPazarIndex;
+            if (acilacakUrunler[aktifPazar][tUniqueKey]) delete acilacakUrunler[aktifPazar][tUniqueKey];
 
             if (window.firebaseDb) {
                 try {
                     const { doc, setDoc } = window.firebaseMethods;
-                    let docId = `${aktifPazar}_${tKodKey}`.replace(/[^a-zA-Z0-9]/g, "_");
+                    let docId = `${aktifPazar}_${tUniqueKey}`.replace(/[^a-zA-Z0-9]/g, "_");
                     await setDoc(doc(window.firebaseDb, "eslesmeler", docId), {
                         pazar: aktifPazar,
-                        tKey: tKodKey,
+                        tKey: tUniqueKey,
                         pIndex: Number(secilenPazarIndex),
                         type: 'match'
                     });
-                    alert("Eşleşme buluta kaydedildi! ☁️️");
+                    alert("Eşleşme buluta kaydedildi! ☁️");
                 } catch (err) {
                     console.log("Buluta kayıt hatası:", err);
                 }
@@ -257,18 +263,24 @@
             analiziBaslat();
         }
 
-        window.acilacakIsaretle = async function(tKodKey) {
+        window.acilacakIsaretle = async function(tIdx) {
+            let row = tsoftData[tIdx];
+            let tKod = String(kolonDegeriBul(row, ['web servis kodu', 'stok kodu', 'sku', 'stokkodu', 'tedarikçi stok kodu'])).trim();
+            let tBarkod = String(kolonDegeriBul(row, ['barkod', 'barcode'])).trim();
+            let tIsim = String(kolonDegeriBul(row, ['ürün adı', 'urun adi', 'title', 'product name'])).trim();
+            let tUniqueKey = tKod || tBarkod || tIsim;
+
             if (!acilacakUrunler[aktifPazar]) acilacakUrunler[aktifPazar] = {};
-            acilacakUrunler[aktifPazar][tKodKey] = true;
-            if (manuelEslesmeler[aktifPazar][tKodKey] !== undefined) delete manuelEslesmeler[aktifPazar][tKodKey];
+            acilacakUrunler[aktifPazar][tUniqueKey] = true;
+            if (manuelEslesmeler[aktifPazar][tUniqueKey] !== undefined) delete manuelEslesmeler[aktifPazar][tUniqueKey];
 
             if (window.firebaseDb) {
                 try {
                     const { doc, setDoc } = window.firebaseMethods;
-                    let docId = `${aktifPazar}_${tKodKey}`.replace(/[^a-zA-Z0-9]/g, "_");
+                    let docId = `${aktifPazar}_${tUniqueKey}`.replace(/[^a-zA-Z0-9]/g, "_");
                     await setDoc(doc(window.firebaseDb, "eslesmeler", docId), {
                         pazar: aktifPazar,
-                        tKey: tKodKey,
+                        tKey: tUniqueKey,
                         type: 'acilacak'
                     });
                 } catch (err) {
@@ -280,13 +292,19 @@
             analiziBaslat();
         }
 
-        window.acilacaktanCikar = async function(tKodKey) {
-            if (acilacakUrunler[aktifPazar][tKodKey]) delete acilacakUrunler[aktifPazar][tKodKey];
+        window.acilacaktanCikar = async function(tIdx) {
+            let row = tsoftData[tIdx];
+            let tKod = String(kolonDegeriBul(row, ['web servis kodu', 'stok kodu', 'sku', 'stokkodu', 'tedarikçi stok kodu'])).trim();
+            let tBarkod = String(kolonDegeriBul(row, ['barkod', 'barcode'])).trim();
+            let tIsim = String(kolonDegeriBul(row, ['ürün adı', 'urun adi', 'title', 'product name'])).trim();
+            let tUniqueKey = tKod || tBarkod || tIsim;
+
+            if (acilacakUrunler[aktifPazar][tUniqueKey]) delete acilacakUrunler[aktifPazar][tUniqueKey];
 
             if (window.firebaseDb) {
                 try {
                     const { doc, deleteDoc } = window.firebaseMethods;
-                    let docId = `${aktifPazar}_${tKodKey}`.replace(/[^a-zA-Z0-9]/g, "_");
+                    let docId = `${aktifPazar}_${tUniqueKey}`.replace(/[^a-zA-Z0-9]/g, "_");
                     await deleteDoc(doc(window.firebaseDb, "eslesmeler", docId));
                 } catch (err) {
                     console.log("Buluttan silme hatası:", err);
@@ -361,8 +379,6 @@
                 let tFiyat = Number(kolonDegeriBul(tRow, ['kdv dahil fiyat', 'satis fiyati', 'fiyat', 'tutar'])) || 0;
 
                 let tUniqueKey = tKod || tBarkod || tIsim;
-                // HTML ID ve btoa (Base64) güvenli anahtar üretimi
-                let safeKey = btoa(unescape(encodeURIComponent(tUniqueKey))).replace(/=/g, "");
 
                 // 1. Kontrol: İş planında açılacak olarak işaretlenmiş mi?
                 if (acilacakUrunler[aktifPazar] && acilacakUrunler[aktifPazar][tUniqueKey]) {
@@ -373,7 +389,7 @@
                             <td class="p-3 text-xs font-mono text-slate-500">Kod: ${tKod || '-'} | Barkod: ${tBarkod || '-'}</td>
                             <td class="p-3 text-blue-700 font-semibold">Stok: ${tStok} | Fiyat: ${tFiyat} TL</td>
                             <td class="p-3 text-center">
-                                <button onclick="acilacaktanCikar('${tUniqueKey.replace(/'/g, "\\'")}')" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded text-xs font-semibold shadow">
+                                <button onclick="acilacaktanCikar(${tIdx})" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded text-xs font-semibold shadow">
                                     Listeden Çıkar
                                 </button>
                             </td>
@@ -430,21 +446,20 @@
                     }
                 } else {
                     eslesmeyenSayisi++;
-                    let escapedKey = tUniqueKey.replace(/'/g, "\\'");
                     eslesmeyenHtmlContent += `
                         <tr class="border-b border-slate-100 hover:bg-slate-50">
                             <td class="p-3 font-medium">${tIsim}<br><span class="text-xs text-slate-400 font-mono">Kod: ${tKod || '-'} | Barkod: ${tBarkod || '-'}</span></td>
                             <td class="p-3 text-blue-700 font-semibold">Stok: ${tStok} | Fiyat: ${tFiyat} TL</td>
                             <td class="p-3">
-                                <select id="select-${safeKey}" class="w-full p-2 border border-slate-300 rounded text-xs bg-white mb-2">
+                                <select id="select-${tIdx}" class="w-full p-2 border border-slate-300 rounded text-xs bg-white mb-2">
                                     ${pazarSecenekleriHTML}
                                 </select>
                             </td>
                             <td class="p-3 text-center space-y-2">
-                                <button onclick="manuelEsleKaydet('${safeKey}')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded text-xs font-semibold shadow">
+                                <button onclick="manuelEsleKaydet(${tIdx})" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded text-xs font-semibold shadow">
                                     Buluta Öğret
                                 </button>
-                                <button onclick="acilacakIsaretle('${escapedKey}')" class="w-full bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded text-xs font-semibold shadow">
+                                <button onclick="acilacakIsaretle(${tIdx})" class="w-full bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded text-xs font-semibold shadow">
                                     🚧 İş Planına Ekle
                                 </button>
                             </td>
@@ -458,7 +473,7 @@
             eslesmeyenTablo.innerHTML = eslesmeyenHtmlContent || `<tr><td colspan="4" class="p-6 text-center text-slate-500">Harika! İşaretlenmemiş eşleşmeyen ürün kalmadı.</td></tr>`;
 
             document.getElementById('ozetIcerik').innerHTML = `
-                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                <div class="bg-slate-55 p-4 rounded-lg border border-slate-200">
                     <div class="text-2xl font-bold text-blue-600">${tsoftData.length}</div>
                     <div class="text-sm text-slate-500 mt-1">T-Soft Ürün</div>
                 </div>
