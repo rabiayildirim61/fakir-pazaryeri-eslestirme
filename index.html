@@ -10,7 +10,7 @@
     <!-- Firebase SDK (v12) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, setDoc, doc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDTX7Ul5CQPG1Hhe5WOJi29C7AOR4fP574",
@@ -25,9 +25,8 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Global fonksiyon ve nesneler
         window.firebaseDb = db;
-        window.firebaseMethods = { collection, getDocs, setDoc, doc };
+        window.firebaseMethods = { collection, getDocs, setDoc, doc, deleteDoc };
     </script>
 </head>
 <body class="bg-slate-50 min-h-screen p-6">
@@ -35,7 +34,7 @@
         <!-- Başlık -->
         <div class="bg-white rounded-xl shadow-sm p-6 mb-6 border border-slate-200">
             <h1 class="text-2xl font-bold text-slate-800">☁️ T-Soft Bulut Tabanlı Pazar Yeri Kontrol Paneli</h1>
-            <p class="text-slate-600 mt-1">Ana kaynak **T-Soft** verisini yükle, pazar yerini seç ve eşleştirmeleri bulut veritabanına kalıcı olarak kaydet.</p>
+            <p class="text-slate-600 mt-1">Ana kaynak **T-Soft** verisini yükle, pazar yerini seç ve eşleştirmeleri ya da iş planındaki açılacak ürünleri buluta kaydet.</p>
         </div>
 
         <!-- T-Soft Ortak Yükleme Alanı -->
@@ -72,7 +71,7 @@
         <div id="sonucAlani" class="hidden space-y-6">
             <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
                 <h2 id="ozetBaslik" class="text-lg font-bold text-slate-800 mb-4">📊 Karşılaştırma Özeti</h2>
-                <div id="ozetIcerik" class="grid grid-cols-1 md:grid-cols-4 gap-4 text-center"></div>
+                <div id="ozetIcerik" class="grid grid-cols-1 md:grid-cols-5 gap-4 text-center"></div>
             </div>
 
             <!-- Hatalı Ürünler Tablosu -->
@@ -94,10 +93,29 @@
                 </div>
             </div>
 
+            <!-- İş Planındaki Açılacak Ürünler Tablosu -->
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+                <h2 class="text-lg font-bold text-slate-800 mb-4">🚧 İş Planında / Açılacak Ürünler</h2>
+                <p class="text-xs text-slate-500 mb-4">Pazar yerinde henüz açılmamış ancak iş planına dahil edilerek işaretlenmiş ürünler.</p>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm text-slate-700">
+                        <thead>
+                            <tr class="bg-slate-100 border-b border-slate-200">
+                                <th class="p-3">Ürün Adı</th>
+                                <th class="p-3">Kod / Barkod</th>
+                                <th class="p-3">Stok / Fiyat</th>
+                                <th class="p-3 text-center">İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody id="acilicakTabloIcerik"></tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- Eşleşmeyen / Manuel Eşleştirme Bekleyen Ürünler -->
             <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
-                <h2 class="text-lg font-bold text-slate-800 mb-4">🔍 Otomatik Eşleşmeyenler (Buluta Öğret)</h2>
-                <p class="text-xs text-slate-500 mb-4">Seçtiğin eşleşmeler Firebase Firestore bulut veritabanına kaydedilir ve her cihazdan otomatik tanınır.</p>
+                <h2 class="text-lg font-bold text-slate-800 mb-4">🔍 Otomatik Eşleşmeyenler (Buluta Öğret veya İş Planına Ekle)</h2>
+                <p class="text-xs text-slate-500 mb-4">İster pazar yerindeki gerçek karşılığıyla eşleştir, ister "Açılacak Ürün" olarak işaretle.</p>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse text-sm text-slate-700">
                         <thead>
@@ -105,7 +123,7 @@
                                 <th class="p-3">T-Soft Ürün Adı / Kodu</th>
                                 <th class="p-3">T-Soft Stok / Fiyat</th>
                                 <th class="p-3">Pazar Yerinden Eşleşen Ürünü Seç</th>
-                                <th class="p-3 text-center">İşlem</th>
+                                <th class="p-3 text-center">İşlemler</th>
                             </tr>
                         </thead>
                         <tbody id="eslesmeyenTabloIcerik"></tbody>
@@ -123,9 +141,12 @@
         let manuelEslesmeler = {
             'Trendyol': {}, 'Hepsiburada': {}, 'Amazon': {}, 'N11': {}, 'İdefix': {}, 'Beymen': {}, 'Pazarama': {}
         };
+        // İş planındaki açılacak ürünler: { 'PazarAdi': { 'tUniqueKey': true } }
+        let acilacakUrunler = {
+            'Trendyol': {}, 'Hepsiburada': {}, 'Amazon': {}, 'N11': {}, 'İdefix': {}, 'Beymen': {}, 'Pazarama': {}
+        };
         let aktifPazar = 'Trendyol';
 
-        // Sayfa açıldığında Firebase bulut hafızasından eşleşmeleri çekelim
         window.addEventListener('DOMContentLoaded', async () => {
             setTimeout(async () => {
                 if (window.firebaseDb) {
@@ -134,12 +155,17 @@
                         const querySnapshot = await getDocs(collection(window.firebaseDb, "eslesmeler"));
                         querySnapshot.forEach((docSnap) => {
                             let data = docSnap.data();
-                            if (data.pazar && data.tKey && data.pIndex !== undefined) {
-                                if (!manuelEslesmeler[data.pazar]) manuelEslesmeler[data.pazar] = {};
-                                manuelEslesmeler[data.pazar][data.tKey] = data.pIndex;
+                            if (data.pazar && data.tKey) {
+                                if (data.type === 'acilacak') {
+                                    if (!acilacakUrunler[data.pazar]) acilacakUrunler[data.pazar] = {};
+                                    acilacakUrunler[data.pazar][data.tKey] = true;
+                                } else if (data.pIndex !== undefined) {
+                                    if (!manuelEslesmeler[data.pazar]) manuelEslesmeler[data.pazar] = {};
+                                    manuelEslesmeler[data.pazar][data.tKey] = data.pIndex;
+                                }
                             }
                         });
-                        console.log("Bulut hafızadan eşleşmeler başarıyla yüklendi.");
+                        console.log("Bulut hafızadan veriler başarıyla yüklendi.");
                     } catch (err) {
                         console.log("Buluttan veri çekerken hata:", err);
                     }
@@ -210,8 +236,8 @@
             }
             
             manuelEslesmeler[aktifPazar][tKodKey] = secilenPazarIndex;
+            if (acilacakUrunler[aktifPazar][tKodKey]) delete acilacakUrunler[aktifPazar][tKodKey];
 
-            // Buluta (Firebase Firestore) kaydet
             if (window.firebaseDb) {
                 try {
                     const { doc, setDoc } = window.firebaseMethods;
@@ -219,12 +245,52 @@
                     await setDoc(doc(window.firebaseDb, "eslesmeler", docId), {
                         pazar: aktifPazar,
                         tKey: tKodKey,
-                        pIndex: Number(secilenPazarIndex)
+                        pIndex: Number(secilenPazarIndex),
+                        type: 'match'
                     });
-                    alert("Eşleşme buluta kalıcı olarak kaydedildi! ☁️");
+                    alert("Eşleşme buluta kaydedildi! ☁️");
                 } catch (err) {
                     console.log("Buluta kayıt hatası:", err);
-                    alert("Yerel kaydedildi ancak buluta yazılamadı.");
+                }
+            }
+
+            analiziBaslat();
+        }
+
+        window.acilacakIsaretle = async function(tKodKey) {
+            if (!acilacakUrunler[aktifPazar]) acilacakUrunler[aktifPazar] = {};
+            acilacakUrunler[aktifPazar][tKodKey] = true;
+            if (manuelEslesmeler[aktifPazar][tKodKey] !== undefined) delete manuelEslesmeler[aktifPazar][tKodKey];
+
+            if (window.firebaseDb) {
+                try {
+                    const { doc, setDoc } = window.firebaseMethods;
+                    let docId = `${aktifPazar}_${tKodKey}`.replace(/[^a-zA-Z0-9]/g, "_");
+                    await setDoc(doc(window.firebaseDb, "eslesmeler", docId), {
+                        pazar: aktifPazar,
+                        tKey: tKodKey,
+                        type: 'acilacak'
+                    });
+                    alert("Ürün 'Açılacak Ürün (İş Planında)' olarak buluta kaydedildi! 🚧");
+                } catch (err) {
+                    console.log("Buluta kayıt hatası:", err);
+                }
+            }
+
+            analiziBaslat();
+        }
+
+        window.acilacaktanCikar = async function(tKodKey) {
+            if (acilacakUrunler[aktifPazar][tKodKey]) delete acilacakUrunler[aktifPazar][tKodKey];
+
+            if (window.firebaseDb) {
+                try {
+                    const { doc, deleteDoc } = window.firebaseMethods;
+                    let docId = `${aktifPazar}_${tKodKey}`.replace(/[^a-zA-Z0-9]/g, "_");
+                    await deleteDoc(doc(window.firebaseDb, "eslesmeler", docId));
+                    alert("Ürün açılacaklar listesinden kaldırıldı.");
+                } catch (err) {
+                    console.log("Buluttan silme hatası:", err);
                 }
             }
 
@@ -245,12 +311,16 @@
             document.getElementById('ozetBaslik').innerText = `📊 ${aktifPazar} Karşılaştırma Özeti`;
 
             const tablo = document.getElementById('tabloIcerik');
+            const acilicakTablo = document.getElementById('acilicakTabloIcerik');
             const eslesmeyenTablo = document.getElementById('eslesmeyenTabloIcerik');
+            
             tablo.innerHTML = "";
+            acilicakTablo.innerHTML = "";
             eslesmeyenTablo.innerHTML = "";
 
             let eslesenSayisi = 0;
             let hataSayisi = 0;
+            let acilicakSayisi = 0;
             let eslesmeyenSayisi = 0;
 
             let pazarBarkodMap = new Map();
@@ -280,6 +350,7 @@
             });
 
             let htmlContent = "";
+            let acilicakHtmlContent = "";
             let eslesmeyenHtmlContent = "";
 
             tsoftData.forEach((tRow, tIdx) => {
@@ -292,6 +363,25 @@
                 let tUniqueKey = tKod || tBarkod || tIsim;
                 let eslesenPazarIndex = null;
                 let yontem = "";
+
+                // 1. Kontrol: İş planında açılacak olarak işaretlenmiş mi?
+                if (acilacakUrunler[aktifPazar] && acilacakUrunler[aktifPazar][tUniqueKey]) {
+                    acilicakSayisi++;
+                    let safeKey = tUniqueKey.replace(/['"\\]/g, "");
+                    acilicakHtmlContent += `
+                        <tr class="border-b border-slate-100 hover:bg-slate-50">
+                            <td class="p-3 font-medium">${tIsim}</td>
+                            <td class="p-3 text-xs font-mono text-slate-500">Kod: ${tKod || '-'} | Barkod: ${tBarkod || '-'}</td>
+                            <td class="p-3 text-blue-700 font-semibold">Stok: ${tStok} | Fiyat: ${tFiyat} TL</td>
+                            <td class="p-3 text-center">
+                                <button onclick="acilacaktanCikar('${safeKey}')" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded text-xs font-semibold shadow">
+                                    Listeden Çıkar
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    return; // Bu ürünü normal eşleşme döngüsünden atla
+                }
 
                 if(manuelEslesmeler[aktifPazar][tUniqueKey] !== undefined) {
                     eslesenPazarIndex = manuelEslesmeler[aktifPazar][tUniqueKey];
@@ -344,13 +434,16 @@
                             <td class="p-3 font-medium">${tIsim}<br><span class="text-xs text-slate-400 font-mono">Kod: ${tKod || '-'} | Barkod: ${tBarkod || '-'}</span></td>
                             <td class="p-3 text-blue-700 font-semibold">Stok: ${tStok} | Fiyat: ${tFiyat} TL</td>
                             <td class="p-3">
-                                <select id="select-${CSS.escape(safeKey)}" class="w-full p-2 border border-slate-300 rounded text-xs bg-white">
+                                <select id="select-${CSS.escape(safeKey)}" class="w-full p-2 border border-slate-300 rounded text-xs bg-white mb-2">
                                     ${pazarSecenekleriHTML}
                                 </select>
                             </td>
-                            <td class="p-3 text-center">
-                                <button onclick="manuelEsleKaydet('${safeKey}')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded text-xs font-semibold shadow">
+                            <td class="p-3 text-center space-y-2">
+                                <button onclick="manuelEsleKaydet('${safeKey}')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded text-xs font-semibold shadow">
                                     Buluta Öğret
+                                </button>
+                                <button onclick="acilacakIsaretle('${safeKey}')" class="w-full bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded text-xs font-semibold shadow">
+                                    🚧 İş Planına Ekle
                                 </button>
                             </td>
                         </tr>
@@ -359,12 +452,13 @@
             });
 
             tablo.innerHTML = htmlContent || `<tr><td colspan="5" class="p-6 text-center text-slate-500">Tebrikler! Eşleşen ürünlerde hiçbir hata bulunamadı. 🎉</td></tr>`;
-            eslesmeyenTablo.innerHTML = eslesmeyenHtmlContent || `<tr><td colspan="4" class="p-6 text-center text-slate-500">Harika! T-Soft'taki tüm ürünler otomatik veya bulut hafıza ile eşleşti.</td></tr>`;
+            acilicakTablo.innerHTML = acilicakHtmlContent || `<tr><td colspan="4" class="p-6 text-center text-slate-500">Henüz iş planında açılacak olarak işaretlenen ürün yok.</td></tr>`;
+            eslesmeyenTablo.innerHTML = eslesmeyenHtmlContent || `<tr><td colspan="4" class="p-6 text-center text-slate-500">Harika! İşaretlenmemiş eşleşmeyen ürün kalmadı.</td></tr>`;
 
             document.getElementById('ozetIcerik').innerHTML = `
                 <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
                     <div class="text-2xl font-bold text-blue-600">${tsoftData.length}</div>
-                    <div class="text-sm text-slate-500 mt-1">T-Soft Ürün Sayısı</div>
+                    <div class="text-sm text-slate-500 mt-1">T-Soft Ürün</div>
                 </div>
                 <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
                     <div class="text-2xl font-bold text-slate-700">${eslesenSayisi}</div>
@@ -372,11 +466,15 @@
                 </div>
                 <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
                     <div class="text-2xl font-bold text-red-600">${hataSayisi}</div>
-                    <div class="text-sm text-slate-500 mt-1">Kritik Hata / Uyuşmazlık</div>
+                    <div class="text-sm text-slate-500 mt-1">Kritik Hata</div>
                 </div>
                 <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                    <div class="text-2xl font-bold text-amber-600">${eslesmeyenSayisi}</div>
-                    <div class="text-sm text-slate-500 mt-1">Buluta Öğretilmeyi Bekleyen</div>
+                    <div class="text-2xl font-bold text-amber-600">${acilicakSayisi}</div>
+                    <div class="text-sm text-slate-500 mt-1">Açılacak (İş Planında)</div>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                    <div class="text-2xl font-bold text-slate-500">${eslesmeyenSayisi}</div>
+                    <div class="text-sm text-slate-500 mt-1">Bekleyen</div>
                 </div>
             `;
         }
