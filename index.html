@@ -27,6 +27,7 @@
 
         window.firebaseDb = db;
         window.firebaseMethods = { collection, getDocs, setDoc, doc, deleteDoc };
+        window.firebaseInitialized = true;
     </script>
 </head>
 <body class="bg-slate-50 min-h-screen p-6">
@@ -38,10 +39,15 @@
         </div>
 
         <!-- T-Soft Ortak Yükleme Alanı -->
-        <div class="bg-blue-50 p-6 rounded-xl shadow-sm border border-blue-200 mb-6">
-            <label class="block text-sm font-bold text-blue-900 mb-2">⭐ Ortak Ana Kaynak: T-Soft Raporu</label>
-            <input type="file" id="tsoftFile" accept=".xlsx, .xls, .csv" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
-            <p id="tsoftDurum" class="text-xs text-blue-700 mt-2">Henüz T-Soft dosyası yüklenmedi.</p>
+        <div class="bg-blue-50 p-6 rounded-xl shadow-sm border border-blue-200 mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div>
+                <label class="block text-sm font-bold text-blue-900 mb-2">⭐ Ortak Ana Kaynak: T-Soft Raporu</label>
+                <input type="file" id="tsoftFile" accept=".xlsx, .xls, .csv" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
+                <p id="tsoftDurum" class="text-xs text-blue-700 mt-2">Henüz T-Soft dosyası yüklenmedi.</p>
+            </div>
+            <div id="bulutDurumGosterge" class="text-xs font-semibold px-3 py-1.5 rounded-full bg-amber-100 text-amber-800 whitespace-nowrap">
+                ⏳ Bulut Bağlantısı Bekleniyor...
+            </div>
         </div>
 
         <!-- Pazar Yeri Sekmeleri -->
@@ -74,27 +80,8 @@
                 <div id="ozetIcerik" class="grid grid-cols-1 md:grid-cols-5 gap-4 text-center"></div>
             </div>
 
-            <!-- Hatalı Ürünler Tablosu -->
-            <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
-                <h2 class="text-lg font-bold text-slate-800 mb-4">⚠️ T-Soft'a Göre Hatalı / Uyumsuz Ürünler</h2>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse text-sm text-slate-700">
-                        <thead>
-                            <tr class="bg-slate-100 border-b border-slate-200">
-                                <th class="p-3">Eşleşme Yöntemi</th>
-                                <th class="p-3">Ürün Adı</th>
-                                <th class="p-3 text-blue-700">T-Soft (Doğru Kaynak)</th>
-                                <th class="p-3 text-slate-700">Pazar Yeri Durumu</th>
-                                <th class="p-3">Tespit Edilen Hata</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabloIcerik"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- İş Planındaki Açılacak Ürünler Tablosu -->
-            <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+            <!-- İş Planındaki Açılacak Ürünler Tablosu (Üste Taşındı / Öne Alındı) -->
+            <div id="isPlaniBolumu" class="bg-white rounded-xl shadow-sm p-6 border border-amber-200 bg-amber-50/30">
                 <h2 class="text-lg font-bold text-slate-800 mb-4">🚧 İş Planında / Açılacak Ürünler</h2>
                 <p class="text-xs text-slate-500 mb-4">Pazar yerinde henüz açılmamış ancak iş planına dahil edilerek işaretlenmiş ürünler.</p>
                 <div class="overflow-x-auto">
@@ -112,10 +99,37 @@
                 </div>
             </div>
 
+            <!-- Hatalı Ürünler Tablosu -->
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-3">
+                    <h2 class="text-lg font-bold text-slate-800">⚠️ T-Soft'a Göre Hatalı / Uyumsuz Ürünler</h2>
+                    <input type="text" id="aramaHata" placeholder="Hatalı ürünlerde ara..." onkeyup="tablolariFiltrele()" class="px-3 py-1.5 text-xs border border-slate-300 rounded-lg w-full md:w-64">
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm text-slate-700">
+                        <thead>
+                            <tr class="bg-slate-100 border-b border-slate-200">
+                                <th class="p-3">Eşleşme Yöntemi</th>
+                                <th class="p-3">Ürün Adı</th>
+                                <th class="p-3 text-blue-700">T-Soft (Doğru Kaynak)</th>
+                                <th class="p-3 text-slate-700">Pazar Yeri Durumu</th>
+                                <th class="p-3">Tespit Edilen Hata</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabloIcerik"></tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- Eşleşmeyen / Manuel Eşleştirme Bekleyen Ürünler -->
             <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
-                <h2 class="text-lg font-bold text-slate-800 mb-4">🔍 Otomatik Eşleşmeyenler</h2>
-                <p class="text-xs text-slate-500 mb-4">Pazar yerinde bulamadıysan, açılır listeden <b>"🚧 [İŞ PLANINA EKLE] Açılacak Ürün"</b> seçeneğini seçip <b>Buluta Öğret / Kaydet</b> butonuna basabilirsin.</p>
+                <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-3">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800">🔍 Otomatik Eşleşmeyenler</h2>
+                        <p class="text-xs text-slate-500 mt-1">Pazar yerinde bulamadıysan, açılır listeden <b>"🚧 [İŞ PLANINA EKLE] Açılacak Ürün"</b> seçeneğini seçip <b>Buluta Öğret / Kaydet</b> butonuna basabilirsin.</p>
+                    </div>
+                    <input type="text" id="aramaEslesmeyen" placeholder="Bekleyenlerde ara..." onkeyup="tablolariFiltrele()" class="px-3 py-1.5 text-xs border border-slate-300 rounded-lg w-full md:w-64">
+                </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse text-sm text-slate-700">
                         <thead>
@@ -146,9 +160,11 @@
         };
         let aktifPazar = 'Trendyol';
 
-        window.addEventListener('DOMContentLoaded', async () => {
-            setTimeout(async () => {
+        // Bulut verilerini arka planda güvenle yükle
+        window.addEventListener('DOMContentLoaded', () => {
+            const kontrolInterval = setInterval(async () => {
                 if (window.firebaseDb) {
+                    clearInterval(kontrolInterval);
                     try {
                         const { collection, getDocs } = window.firebaseMethods;
                         const querySnapshot = await getDocs(collection(window.firebaseDb, "eslesmeler"));
@@ -164,16 +180,22 @@
                                 }
                             }
                         });
-                        console.log("Bulut hafızadan veriler başarıyla yüklendi.");
+                        const gosterge = document.getElementById('bulutDurumGosterge');
+                        gosterge.className = "text-xs font-semibold px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-800 whitespace-nowrap";
+                        gosterge.innerText = "☁️ Bulut Bağlantısı Aktif";
                     } catch (err) {
-                        console.log("Buluttan veri çekerken hata:", err);
+                        console.error("Buluttan veri çekerken hata:", err);
+                        const gosterge = document.getElementById('bulutDurumGosterge');
+                        gosterge.className = "text-xs font-semibold px-3 py-1.5 rounded-full bg-red-100 text-red-800 whitespace-nowrap";
+                        gosterge.innerText = "❌ Bulut Bağlantı Hatası";
                     }
                 }
-            }, 1000);
+            }, 300);
         });
 
         document.getElementById('tsoftFile').addEventListener('change', (e) => {
             const file = e.target.files[0];
+            if (!file) return;
             const reader = new FileReader();
             reader.onload = function(event) {
                 const data = new Uint8Array(event.target.result);
@@ -186,6 +208,7 @@
 
         document.getElementById('pazarFile').addEventListener('change', (e) => {
             const file = e.target.files[0];
+            if (!file) return;
             const reader = new FileReader();
             reader.onload = function(event) {
                 const data = new Uint8Array(event.target.result);
@@ -241,16 +264,20 @@
             }
             
             const secilenDeger = selectEl.value;
+            
+            // Güvenli Firestore Doküman ID üretimi (Boşluk ve özel karakterleri temizler)
+            let safeKey = tUniqueKey.replace(/[^a-zA-Z0-9]/g, "_");
+            let docId = `${aktifPazar}_${safeKey}`;
 
-            if (secilenDeger === "ACILACAK_URUN") {
-                if (!window.firebaseDb) {
-                    alert("Bulut bağlantısı hazır değil. Lütfen sayfayı yenileyip tekrar deneyin.");
-                    return;
-                }
+            if (!window.firebaseDb) {
+                alert("Bulut bağlantısı henüz kurulamadı. Lütfen birkaç saniye bekleyip tekrar deneyin.");
+                return;
+            }
 
-                try {
-                    const { doc, setDoc } = window.firebaseMethods;
-                    const docId = `${aktifPazar}_${tUniqueKey}`.replace(/[^a-zA-Z0-9]/g, "_");
+            try {
+                const { doc, setDoc } = window.firebaseMethods;
+
+                if (secilenDeger === "ACILACAK_URUN") {
                     await setDoc(doc(window.firebaseDb, "eslesmeler", docId), {
                         pazar: aktifPazar,
                         tKey: tUniqueKey,
@@ -258,7 +285,6 @@
                         updatedAt: new Date().toISOString()
                     });
 
-                    // Kayıt başarılıysa ürünü yerel olarak da iş planına taşı.
                     if (!acilacakUrunler[aktifPazar]) acilacakUrunler[aktifPazar] = {};
                     acilacakUrunler[aktifPazar][tUniqueKey] = true;
                     if (manuelEslesmeler[aktifPazar][tUniqueKey] !== undefined) {
@@ -266,38 +292,29 @@
                     }
 
                     alert("Ürün buluta kaydedildi ve iş planına eklendi! 🚧");
-                    analiziBaslat();
-                    document.getElementById('acilicakTabloIcerik')
-                        .closest('.bg-white')
-                        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                } catch (err) {
-                    console.error("Buluta kayıt hatası:", err);
-                    alert("Ürün buluta kaydedilemedi. Firestore güvenlik kurallarını ve internet bağlantısını kontrol edin.");
-                }
-                return;
-            } else {
-                let secilenPazarIndex = Number(secilenDeger);
-                manuelEslesmeler[aktifPazar][tUniqueKey] = secilenPazarIndex;
-                if (acilacakUrunler[aktifPazar][tUniqueKey]) delete acilacakUrunler[aktifPazar][tUniqueKey];
+                } else {
+                    let secilenPazarIndex = Number(secilenDeger);
+                    manuelEslesmeler[aktifPazar][tUniqueKey] = secilenPazarIndex;
+                    if (acilacakUrunler[aktifPazar][tUniqueKey]) delete acilacakUrunler[aktifPazar][tUniqueKey];
 
-                if (window.firebaseDb) {
-                    try {
-                        const { doc, setDoc } = window.firebaseMethods;
-                        let docId = `${aktifPazar}_${tUniqueKey}`.replace(/[^a-zA-Z0-9]/g, "_");
-                        await setDoc(doc(window.firebaseDb, "eslesmeler", docId), {
-                            pazar: aktifPazar,
-                            tKey: tUniqueKey,
-                            pIndex: secilenPazarIndex,
-                            type: 'match'
-                        });
-                    } catch (err) {
-                        console.log("Buluta kayıt hatası:", err);
-                    }
+                    await setDoc(doc(window.firebaseDb, "eslesmeler", docId), {
+                        pazar: aktifPazar,
+                        tKey: tUniqueKey,
+                        pIndex: secilenPazarIndex,
+                        type: 'match',
+                        updatedAt: new Date().toISOString()
+                    });
+                    alert("Eşleşme buluta kaydedildi! ☁️");
                 }
-                alert("Eşleşme buluta kaydedildi! ☁️");
+
+                // Ekranı yenile ve iş planı bölümüne yumuşakça kaydır
+                analiziBaslat();
+                document.getElementById('isPlaniBolumu').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            } catch (err) {
+                console.error("Buluta kayıt hatası detay:", err);
+                alert("Buluta kayıt başarısız! Hata: " + err.message);
             }
-
-            analiziBaslat();
         }
 
         async function acilacaktanCikar(tIdx) {
@@ -312,7 +329,8 @@
             if (window.firebaseDb) {
                 try {
                     const { doc, deleteDoc } = window.firebaseMethods;
-                    let docId = `${aktifPazar}_${tUniqueKey}`.replace(/[^a-zA-Z0-9]/g, "_");
+                    let safeKey = tUniqueKey.replace(/[^a-zA-Z0-9]/g, "_");
+                    let docId = `${aktifPazar}_${safeKey}`;
                     await deleteDoc(doc(window.firebaseDb, "eslesmeler", docId));
                 } catch (err) {
                     console.log("Buluttan silme hatası:", err);
@@ -321,6 +339,23 @@
 
             alert("Ürün açılacaklar listesinden kaldırıldı.");
             analiziBaslat();
+        }
+
+        function tablolariFiltrele() {
+            const aramaHataText = document.getElementById('aramaHata').value.toLowerCase();
+            const aramaEslesmeyenText = document.getElementById('aramaEslesmeyen').value.toLowerCase();
+
+            const hataRows = document.querySelectorAll('#tabloIcerik tr');
+            hataRows.forEach(row => {
+                const text = row.innerText.toLowerCase();
+                row.style.display = text.includes(aramaHataText) ? "" : "none";
+            });
+
+            const eslesmeyenRows = document.querySelectorAll('#eslesmeyenTabloIcerik tr');
+            eslesmeyenRows.forEach(row => {
+                const text = row.innerText.toLowerCase();
+                row.style.display = text.includes(aramaEslesmeyenText) ? "" : "none";
+            });
         }
 
         function analiziBaslat() {
@@ -399,7 +434,7 @@
                 let eslesenPazarIndex = null;
                 let yontem = "";
 
-                if(manuelEslesmeler[aktifPazar][tUniqueKey] !== undefined) {
+                if(manuelEslesmeler[aktifPazar] && manuelEslesmeler[aktifPazar][tUniqueKey] !== undefined) {
                     eslesenPazarIndex = manuelEslesmeler[aktifPazar][tUniqueKey];
                     yontem = '<span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-semibold">Buluttan Öğrenilmiş</span>';
                 }
