@@ -80,7 +80,7 @@
                 <div id="ozetIcerik" class="grid grid-cols-1 md:grid-cols-5 gap-4 text-center"></div>
             </div>
 
-            <!-- İş Planındaki Açılacak Ürünler Tablosu (Üste Taşındı / Öne Alındı) -->
+            <!-- İş Planındaki Açılacak Ürünler Tablosu -->
             <div id="isPlaniBolumu" class="bg-white rounded-xl shadow-sm p-6 border border-amber-200 bg-amber-50/30">
                 <h2 class="text-lg font-bold text-slate-800 mb-4">🚧 İş Planında / Açılacak Ürünler</h2>
                 <p class="text-xs text-slate-500 mb-4">Pazar yerinde henüz açılmamış ancak iş planına dahil edilerek işaretlenmiş ürünler.</p>
@@ -102,7 +102,7 @@
             <!-- Hatalı Ürünler Tablosu -->
             <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
                 <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-3">
-                    <h2 class="text-lg font-bold text-slate-800">⚠️ T-Soft'a Göre Hatalı / Uyumsuz Ürünler</h2>
+                    <h2 class="text-lg font-bold text-slate-800">⚠️️ T-Soft'a Göre Hatalı / Uyumsuz Ürünler</h2>
                     <input type="text" id="aramaHata" placeholder="Hatalı ürünlerde ara..." onkeyup="tablolariFiltrele()" class="px-3 py-1.5 text-xs border border-slate-300 rounded-lg w-full md:w-64">
                 </div>
                 <div class="overflow-x-auto">
@@ -250,32 +250,40 @@
             return "";
         }
 
-        async function manuelEsleKaydet(tIdx) {
-            let row = tsoftData[tIdx];
-            let tKod = String(kolonDegeriBul(row, ['web servis kodu', 'stok kodu', 'sku', 'stokkodu', 'tedarikçi stok kodu'])).trim();
-            let tBarkod = String(kolonDegeriBul(row, ['barkod', 'barcode'])).trim();
-            let tIsim = String(kolonDegeriBul(row, ['ürün adı', 'urun adi', 'title', 'product name'])).trim();
-            let tUniqueKey = tKod || tBarkod || tIsim;
-
-            const selectEl = document.getElementById(`select-${tIdx}`);
-            if(!selectEl || selectEl.value === "") {
-                alert("Lütfen pazar yerinden ürün seçin veya 'İş Planına Ekle' seçeneğini seçin.");
-                return;
-            }
-            
-            const secilenDeger = selectEl.value;
-            
-            // Güvenli Firestore Doküman ID üretimi (Boşluk ve özel karakterleri temizler)
-            let safeKey = tUniqueKey.replace(/[^a-zA-Z0-9]/g, "_");
-            let docId = `${aktifPazar}_${safeKey}`;
-
-            if (!window.firebaseDb) {
-                alert("Bulut bağlantısı henüz kurulamadı. Lütfen birkaç saniye bekleyip tekrar deneyin.");
-                return;
-            }
-
+        // BUTON ÇALIŞMAMA SORUNUNU ÇÖZEN GÜVENLİ FONKSİYON
+        window.manuelEsleKaydet = async function(tIdx) {
             try {
+                let row = tsoftData[tIdx];
+                if (!row) {
+                    alert("Ürün satırı bulunamadı.");
+                    return;
+                }
+
+                let tKod = String(kolonDegeriBul(row, ['web servis kodu', 'stok kodu', 'sku', 'stokkodu', 'tedarikçi stok kodu'])).trim();
+                let tBarkod = String(kolonDegeriBul(row, ['barkod', 'barcode'])).trim();
+                let tIsim = String(kolonDegeriBul(row, ['ürün adı', 'urun adi', 'title', 'product name'])).trim();
+                let tUniqueKey = tKod || tBarkod || tIsim;
+
+                const selectEl = document.getElementById(`select-${tIdx}`);
+                if (!selectEl) {
+                    alert("Seçim kutusu bulunamadı.");
+                    return;
+                }
+
+                const secilenDeger = selectEl.value;
+                if (!secilenDeger) {
+                    alert("Lütfen pazar yerinden ürün seçin veya 'İş Planına Ekle' seçeneğini seçin.");
+                    return;
+                }
+
+                if (!window.firebaseDb || !window.firebaseMethods) {
+                    alert("Bulut bağlantısı henüz kurulamadı. Lütfen birkaç saniye bekleyip tekrar deneyin.");
+                    return;
+                }
+
                 const { doc, setDoc } = window.firebaseMethods;
+                let safeKey = tUniqueKey.replace(/[^a-zA-Z0-9]/g, "_");
+                let docId = `${aktifPazar}_${safeKey}`;
 
                 if (secilenDeger === "ACILACAK_URUN") {
                     await setDoc(doc(window.firebaseDb, "eslesmeler", docId), {
@@ -294,6 +302,7 @@
                     alert("Ürün buluta kaydedildi ve iş planına eklendi! 🚧");
                 } else {
                     let secilenPazarIndex = Number(secilenDeger);
+                    if (!manuelEslesmeler[aktifPazar]) manuelEslesmeler[aktifPazar] = {};
                     manuelEslesmeler[aktifPazar][tUniqueKey] = secilenPazarIndex;
                     if (acilacakUrunler[aktifPazar][tUniqueKey]) delete acilacakUrunler[aktifPazar][tUniqueKey];
 
@@ -307,39 +316,43 @@
                     alert("Eşleşme buluta kaydedildi! ☁️");
                 }
 
-                // Ekranı yenile ve iş planı bölümüne yumuşakça kaydır
                 analiziBaslat();
-                document.getElementById('isPlaniBolumu').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                const isPlaniEl = document.getElementById('isPlaniBolumu');
+                if (isPlaniEl) {
+                    isPlaniEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
 
             } catch (err) {
                 console.error("Buluta kayıt hatası detay:", err);
-                alert("Buluta kayıt başarısız! Hata: " + err.message);
+                alert("İşlem sırasında hata oluştu: " + err.message);
             }
-        }
+        };
 
-        async function acilacaktanCikar(tIdx) {
-            let row = tsoftData[tIdx];
-            let tKod = String(kolonDegeriBul(row, ['web servis kodu', 'stok kodu', 'sku', 'stokkodu', 'tedarikçi stok kodu'])).trim();
-            let tBarkod = String(kolonDegeriBul(row, ['barkod', 'barcode'])).trim();
-            let tIsim = String(kolonDegeriBul(row, ['ürün adı', 'urun adi', 'title', 'product name'])).trim();
-            let tUniqueKey = tKod || tBarkod || tIsim;
+        window.acilacaktanCikar = async function(tIdx) {
+            try {
+                let row = tsoftData[tIdx];
+                let tKod = String(kolonDegeriBul(row, ['web servis kodu', 'stok kodu', 'sku', 'stokkodu', 'tedarikçi stok kodu'])).trim();
+                let tBarkod = String(kolonDegeriBul(row, ['barkod', 'barcode'])).trim();
+                let tIsim = String(kolonDegeriBul(row, ['ürün adı', 'urun adi', 'title', 'product name'])).trim();
+                let tUniqueKey = tKod || tBarkod || tIsim;
 
-            if (acilacakUrunler[aktifPazar][tUniqueKey]) delete acilacakUrunler[aktifPazar][tUniqueKey];
+                if (acilacakUrunler[aktifPazar] && acilacakUrunler[aktifPazar][tUniqueKey]) {
+                    delete acilacakUrunler[aktifPazar][tUniqueKey];
+                }
 
-            if (window.firebaseDb) {
-                try {
+                if (window.firebaseDb && window.firebaseMethods) {
                     const { doc, deleteDoc } = window.firebaseMethods;
                     let safeKey = tUniqueKey.replace(/[^a-zA-Z0-9]/g, "_");
                     let docId = `${aktifPazar}_${safeKey}`;
                     await deleteDoc(doc(window.firebaseDb, "eslesmeler", docId));
-                } catch (err) {
-                    console.log("Buluttan silme hatası:", err);
                 }
-            }
 
-            alert("Ürün açılacaklar listesinden kaldırıldı.");
-            analiziBaslat();
-        }
+                alert("Ürün açılacaklar listesinden kaldırıldı.");
+                analiziBaslat();
+            } catch (err) {
+                console.error("Kaldırma hatası:", err);
+            }
+        };
 
         function tablolariFiltrele() {
             const aramaHataText = document.getElementById('aramaHata').value.toLowerCase();
