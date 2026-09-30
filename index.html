@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>T-Soft Çoklu Pazar Yeri Bulut Yönetim Paneli</title>
+    <title>Fakir - Pazaryeri Entegrasyon & Eşleştirme Editörü</title>
     <!-- Tailwind CSS ve SheetJS (Excel okuyucu) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- Firebase SDK (v12) -->
+    <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
         import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
@@ -33,39 +33,35 @@
 <body class="bg-slate-50 min-h-screen p-6">
     <div class="max-w-7xl mx-auto">
         <!-- Başlık -->
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-6 border border-slate-200">
-            <h1 class="text-2xl font-bold text-slate-800">☁️ T-Soft Bulut Tabanlı Pazar Yeri Kontrol Paneli</h1>
-            <p class="text-slate-600 mt-1">Ana kaynak **T-Soft** verisini yükle, pazar yerini seç ve eşleştirmeleri ya da iş planındaki açılacak ürünleri buluta kaydet.</p>
-        </div>
-
-        <!-- T-Soft Ortak Yükleme Alanı -->
-        <div class="bg-blue-50 p-6 rounded-xl shadow-sm border border-blue-200 mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6 border border-slate-200 flex justify-between items-center">
             <div>
-                <label class="block text-sm font-bold text-blue-900 mb-2">⭐ Ortak Ana Kaynak: T-Soft Raporu</label>
-                <input type="file" id="tsoftFile" accept=".xlsx, .xls, .csv" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
-                <p id="tsoftDurum" class="text-xs text-blue-700 mt-2">Henüz T-Soft dosyası yüklenmedi.</p>
+                <h1 class="text-2xl font-bold text-slate-800">🛒 Fakir E-Ticaret | Pazaryeri Fiyat & Stok Uyumsuzluk Editörü</h1>
+                <p class="text-slate-600 mt-1">T-Soft ana verinizi Trendyol, Hepsiburada ve N11 excelleriyle karşılaştırın, hataları görün ve buluta kaydedin.</p>
             </div>
             <div id="bulutDurumGosterge" class="text-xs font-semibold px-3 py-1.5 rounded-full bg-amber-100 text-amber-800 whitespace-nowrap">
                 ⏳ Bulut Bağlantısı Bekleniyor...
             </div>
         </div>
 
+        <!-- T-Soft Ortak Yükleme Alanı -->
+        <div class="bg-blue-50 p-6 rounded-xl shadow-sm border border-blue-200 mb-6">
+            <label class="block text-sm font-bold text-blue-900 mb-2">⭐ 1. Adım: T-Soft Ürünleri (Ana Veri) Yükleyin</label>
+            <input type="file" id="tsoftFile" accept=".xlsx, .xls, .csv" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
+            <p id="tsoftDurum" class="text-xs text-blue-700 mt-2">Henüz T-Soft dosyası yüklenmedi.</p>
+        </div>
+
         <!-- Pazar Yeri Sekmeleri -->
         <div class="flex flex-wrap gap-2 mb-6 border-b border-slate-200 pb-4" id="pazarSekmeleri">
             <button onclick="pazarSec('Trendyol')" id="btn-Trendyol" class="px-5 py-2.5 rounded-lg font-semibold text-sm bg-blue-600 text-white shadow-sm transition">Trendyol</button>
             <button onclick="pazarSec('Hepsiburada')" id="btn-Hepsiburada" class="px-5 py-2.5 rounded-lg font-semibold text-sm bg-white text-slate-600 border border-slate-300 hover:bg-slate-100 transition">Hepsiburada</button>
-            <button onclick="pazarSec('Amazon')" id="btn-Amazon" class="px-5 py-2.5 rounded-lg font-semibold text-sm bg-white text-slate-600 border border-slate-300 hover:bg-slate-100 transition">Amazon</button>
             <button onclick="pazarSec('N11')" id="btn-N11" class="px-5 py-2.5 rounded-lg font-semibold text-sm bg-white text-slate-600 border border-slate-300 hover:bg-slate-100 transition">N11</button>
-            <button onclick="pazarSec('İdefix')" id="btn-İdefix" class="px-5 py-2.5 rounded-lg font-semibold text-sm bg-white text-slate-600 border border-slate-300 hover:bg-slate-100 transition">İdefix</button>
-            <button onclick="pazarSec('Beymen')" id="btn-Beymen" class="px-5 py-2.5 rounded-lg font-semibold text-sm bg-white text-slate-600 border border-slate-300 hover:bg-slate-100 transition">Beymen</button>
-            <button onclick="pazarSec('Pazarama')" id="btn-Pazarama" class="px-5 py-2.5 rounded-lg font-semibold text-sm bg-white text-slate-600 border border-slate-300 hover:bg-slate-100 transition">Pazarama</button>
         </div>
 
-        <!-- Dosya Yükleme Alanı -->
+        <!-- Pazar Yeri Dosya Yükleme Alanı -->
         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
             <div>
                 <h3 id="aktifPazarBaslik" class="text-lg font-bold text-slate-800">Trendyol Raporunu Yükle</h3>
-                <p class="text-xs text-slate-500 mt-1">Seçilen pazar yerine ait Excel raporunu seç ve analizi başlat.</p>
+                <p class="text-xs text-slate-500 mt-1">İlgili pazaryerine ait Excel raporunu seçin ve analizi başlatın.</p>
                 <input type="file" id="pazarFile" accept=".xlsx, .xls, .csv" class="mt-3 text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 cursor-pointer">
             </div>
             <button onclick="analiziBaslat()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-8 py-3 rounded-xl shadow-md transition duration-200 whitespace-nowrap">
@@ -80,10 +76,9 @@
                 <div id="ozetIcerik" class="grid grid-cols-1 md:grid-cols-5 gap-4 text-center"></div>
             </div>
 
-            <!-- İş Planındaki Açılacak Ürünler Tablosu -->
-            <div id="isPlaniBolumu" class="bg-white rounded-xl shadow-sm p-6 border border-amber-200 bg-amber-50/30">
+            <!-- İş Planı / Açılacak Ürünler -->
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-amber-200 bg-amber-50/30">
                 <h2 class="text-lg font-bold text-slate-800 mb-4">🚧 İş Planında / Açılacak Ürünler</h2>
-                <p class="text-xs text-slate-500 mb-4">Pazar yerinde henüz açılmamış ancak iş planına dahil edilerek işaretlenmiş ürünler.</p>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse text-sm text-slate-700">
                         <thead>
@@ -101,17 +96,14 @@
 
             <!-- Hatalı Ürünler Tablosu -->
             <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
-                <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-3">
-                    <h2 class="text-lg font-bold text-slate-800">⚠️️ T-Soft'a Göre Hatalı / Uyumsuz Ürünler</h2>
-                    <input type="text" id="aramaHata" placeholder="Hatalı ürünlerde ara..." onkeyup="tablolariFiltrele()" class="px-3 py-1.5 text-xs border border-slate-300 rounded-lg w-full md:w-64">
-                </div>
+                <h2 class="text-lg font-bold text-slate-800 mb-4">⚠ T-Soft'a Göre Hatalı / Uyumsuz Ürünler</h2>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse text-sm text-slate-700">
                         <thead>
                             <tr class="bg-slate-100 border-b border-slate-200">
                                 <th class="p-3">Eşleşme Yöntemi</th>
                                 <th class="p-3">Ürün Adı</th>
-                                <th class="p-3 text-blue-700">T-Soft (Doğru Kaynak)</th>
+                                <th class="p-3 text-blue-700">T-Soft (Ana Veri)</th>
                                 <th class="p-3 text-slate-700">Pazar Yeri Durumu</th>
                                 <th class="p-3">Tespit Edilen Hata</th>
                             </tr>
@@ -121,22 +113,16 @@
                 </div>
             </div>
 
-            <!-- Eşleşmeyen / Manuel Eşleştirme Bekleyen Ürünler -->
+            <!-- Otomatik Eşleşmeyenler -->
             <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
-                <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-3">
-                    <div>
-                        <h2 class="text-lg font-bold text-slate-800">🔍 Otomatik Eşleşmeyenler</h2>
-                        <p class="text-xs text-slate-500 mt-1">Pazar yerinde bulamadıysan, açılır listeden <b>"🚧 [İŞ PLANINA EKLE] Açılacak Ürün"</b> seçeneğini seçip <b>Buluta Öğret / Kaydet</b> butonuna basabilirsin.</p>
-                    </div>
-                    <input type="text" id="aramaEslesmeyen" placeholder="Bekleyenlerde ara..." onkeyup="tablolariFiltrele()" class="px-3 py-1.5 text-xs border border-slate-300 rounded-lg w-full md:w-64">
-                </div>
+                <h2 class="text-lg font-bold text-slate-800 mb-4">🔍 Otomatik Eşleşmeyenler & Manuel Eşleştirme</h2>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse text-sm text-slate-700">
                         <thead>
                             <tr class="bg-slate-100 border-b border-slate-200">
                                 <th class="p-3">T-Soft Ürün Adı / Kodu</th>
                                 <th class="p-3">T-Soft Stok / Fiyat</th>
-                                <th class="p-3">İşlem / Pazar Yeri Eşleşmesi</th>
+                                <th class="p-3">Pazar Yeri Eşleşmesi</th>
                                 <th class="p-3 text-center">İşlem</th>
                             </tr>
                         </thead>
@@ -149,18 +135,11 @@
 
     <script>
         let tsoftData = [];
-        let pazarVerileri = {
-            'Trendyol': [], 'Hepsiburada': [], 'Amazon': [], 'N11': [], 'İdefix': [], 'Beymen': [], 'Pazarama': []
-        };
-        let manuelEslesmeler = {
-            'Trendyol': {}, 'Hepsiburada': {}, 'Amazon': {}, 'N11': {}, 'İdefix': {}, 'Beymen': {}, 'Pazarama': {}
-        };
-        let acilacakUrunler = {
-            'Trendyol': {}, 'Hepsiburada': {}, 'Amazon': {}, 'N11': {}, 'İdefix': {}, 'Beymen': {}, 'Pazarama': {}
-        };
+        let pazarVerileri = { 'Trendyol': [], 'Hepsiburada': [], 'N11': [] };
+        let manuelEslesmeler = { 'Trendyol': {}, 'Hepsiburada': {}, 'N11': {} };
+        let acilacakUrunler = { 'Trendyol': {}, 'Hepsiburada': {}, 'N11': {} };
         let aktifPazar = 'Trendyol';
 
-        // Bulut verilerini arka planda güvenle yükle
         window.addEventListener('DOMContentLoaded', () => {
             const kontrolInterval = setInterval(async () => {
                 if (window.firebaseDb) {
@@ -180,14 +159,10 @@
                                 }
                             }
                         });
-                        const gosterge = document.getElementById('bulutDurumGosterge');
-                        gosterge.className = "text-xs font-semibold px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-800 whitespace-nowrap";
-                        gosterge.innerText = "☁️ Bulut Bağlantısı Aktif";
+                        document.getElementById('bulutDurumGosterge').className = "text-xs font-semibold px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-800 whitespace-nowrap";
+                        document.getElementById('bulutDurumGosterge').innerText = "☁️️ Bulut Bağlantısı Aktif";
                     } catch (err) {
-                        console.error("Buluttan veri çekerken hata:", err);
-                        const gosterge = document.getElementById('bulutDurumGosterge');
-                        gosterge.className = "text-xs font-semibold px-3 py-1.5 rounded-full bg-red-100 text-red-800 whitespace-nowrap";
-                        gosterge.innerText = "❌ Bulut Bağlantı Hatası";
+                        console.error("Bulut hatası:", err);
                     }
                 }
             }, 300);
@@ -213,12 +188,7 @@
             reader.onload = function(event) {
                 const data = new Uint8Array(event.target.result);
                 const workbook = XLSX.read(data, {type: 'array'});
-                
-                let sheetName = workbook.SheetNames[0];
-                if (workbook.SheetNames.includes('Listelerim')) {
-                    sheetName = 'Listelerim';
-                }
-                
+                let sheetName = workbook.SheetNames.includes('Listelerim') ? 'Listelerim' : workbook.SheetNames[0];
                 pazarVerileri[aktifPazar] = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
                 alert(`${aktifPazar} raporu başarıyla yüklendi! (${pazarVerileri[aktifPazar].length} ürün)`);
             };
@@ -227,12 +197,9 @@
 
         function pazarSec(pazarAdi) {
             aktifPazar = pazarAdi;
-            const pazarListesi = ['Trendyol', 'Hepsiburada', 'Amazon', 'N11', 'İdefix', 'Beymen', 'Pazarama'];
-            pazarListesi.forEach(p => {
+            ['Trendyol', 'Hepsiburada', 'N11'].forEach(p => {
                 const btn = document.getElementById(`btn-${p}`);
-                btn.className = (p === pazarAdi) 
-                    ? "px-5 py-2.5 rounded-lg font-semibold text-sm bg-blue-600 text-white shadow-sm transition"
-                    : "px-5 py-2.5 rounded-lg font-semibold text-sm bg-white text-slate-600 border border-slate-300 hover:bg-slate-100 transition";
+                btn.className = (p === pazarAdi) ? "px-5 py-2.5 rounded-lg font-semibold text-sm bg-blue-600 text-white shadow-sm transition" : "px-5 py-2.5 rounded-lg font-semibold text-sm bg-white text-slate-600 border border-slate-300 hover:bg-slate-100 transition";
             });
             document.getElementById('aktifPazarBaslik').innerText = `${pazarAdi} Raporunu Yükle`;
             document.getElementById('pazarFile').value = "";
@@ -243,319 +210,139 @@
             const rowKeys = Object.keys(row);
             for (let k of keys) {
                 const foundKey = rowKeys.find(rk => rk.trim().toLowerCase() === k.toLowerCase());
-                if (foundKey !== undefined && row[foundKey] !== undefined) {
-                    return row[foundKey];
-                }
+                if (foundKey !== undefined && row[foundKey] !== undefined) return row[foundKey];
             }
             return "";
         }
 
-        // BUTON ÇALIŞMAMA SORUNUNU ÇÖZEN GÜVENLİ FONKSİYON
         window.manuelEsleKaydet = async function(tIdx) {
-            try {
-                let row = tsoftData[tIdx];
-                if (!row) {
-                    alert("Ürün satırı bulunamadı.");
-                    return;
-                }
+            let row = tsoftData[tIdx];
+            let tKod = String(kolonDegeriBul(row, ['web servis kodu', 'stok kodu', 'sku', 'stokkodu'])).trim();
+            let tBarkod = String(kolonDegeriBul(row, ['barkod', 'barcode'])).trim();
+            let tIsim = String(kolonDegeriBul(row, ['ürün adı', 'urun adi', 'title'])).trim();
+            let tUniqueKey = tKod || tBarkod || tIsim;
 
-                let tKod = String(kolonDegeriBul(row, ['web servis kodu', 'stok kodu', 'sku', 'stokkodu', 'tedarikçi stok kodu'])).trim();
-                let tBarkod = String(kolonDegeriBul(row, ['barkod', 'barcode'])).trim();
-                let tIsim = String(kolonDegeriBul(row, ['ürün adı', 'urun adi', 'title', 'product name'])).trim();
-                let tUniqueKey = tKod || tBarkod || tIsim;
+            const selectEl = document.getElementById(`select-${tIdx}`);
+            const secilenDeger = selectEl.value;
+            if (!secilenDeger) { alert("Lütfen pazar yerinden ürün seçin."); return; }
 
-                const selectEl = document.getElementById(`select-${tIdx}`);
-                if (!selectEl) {
-                    alert("Seçim kutusu bulunamadı.");
-                    return;
-                }
+            const { doc, setDoc } = window.firebaseMethods;
+            let safeKey = tUniqueKey.replace(/[^a-zA-Z0-9]/g, "_");
+            let docId = `${aktifPazar}_${safeKey}`;
 
-                const secilenDeger = selectEl.value;
-                if (!secilenDeger) {
-                    alert("Lütfen pazar yerinden ürün seçin veya 'İş Planına Ekle' seçeneğini seçin.");
-                    return;
-                }
-
-                if (!window.firebaseDb || !window.firebaseMethods) {
-                    alert("Bulut bağlantısı henüz kurulamadı. Lütfen birkaç saniye bekleyip tekrar deneyin.");
-                    return;
-                }
-
-                const { doc, setDoc } = window.firebaseMethods;
-                let safeKey = tUniqueKey.replace(/[^a-zA-Z0-9]/g, "_");
-                let docId = `${aktifPazar}_${safeKey}`;
-
-                if (secilenDeger === "ACILACAK_URUN") {
-                    await setDoc(doc(window.firebaseDb, "eslesmeler", docId), {
-                        pazar: aktifPazar,
-                        tKey: tUniqueKey,
-                        type: 'acilacak',
-                        updatedAt: new Date().toISOString()
-                    });
-
-                    if (!acilacakUrunler[aktifPazar]) acilacakUrunler[aktifPazar] = {};
-                    acilacakUrunler[aktifPazar][tUniqueKey] = true;
-                    if (manuelEslesmeler[aktifPazar][tUniqueKey] !== undefined) {
-                        delete manuelEslesmeler[aktifPazar][tUniqueKey];
-                    }
-
-                    alert("Ürün buluta kaydedildi ve iş planına eklendi! 🚧");
-                } else {
-                    let secilenPazarIndex = Number(secilenDeger);
-                    if (!manuelEslesmeler[aktifPazar]) manuelEslesmeler[aktifPazar] = {};
-                    manuelEslesmeler[aktifPazar][tUniqueKey] = secilenPazarIndex;
-                    if (acilacakUrunler[aktifPazar][tUniqueKey]) delete acilacakUrunler[aktifPazar][tUniqueKey];
-
-                    await setDoc(doc(window.firebaseDb, "eslesmeler", docId), {
-                        pazar: aktifPazar,
-                        tKey: tUniqueKey,
-                        pIndex: secilenPazarIndex,
-                        type: 'match',
-                        updatedAt: new Date().toISOString()
-                    });
-                    alert("Eşleşme buluta kaydedildi! ☁️");
-                }
-
-                analiziBaslat();
-                const isPlaniEl = document.getElementById('isPlaniBolumu');
-                if (isPlaniEl) {
-                    isPlaniEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-
-            } catch (err) {
-                console.error("Buluta kayıt hatası detay:", err);
-                alert("İşlem sırasında hata oluştu: " + err.message);
+            if (secilenDeger === "ACILACAK_URUN") {
+                await setDoc(doc(window.firebaseDb, "eslesmeler", docId), { pazar: aktifPazar, tKey: tUniqueKey, type: 'acilacak' });
+                if (!acilacakUrunler[aktifPazar]) acilacakUrunler[aktifPazar] = {};
+                acilacakUrunler[aktifPazar][tUniqueKey] = true;
+                alert("İş planına eklendi ve buluta kaydedildi! 🚧");
+            } else {
+                let pIndex = Number(secilenDeger);
+                if (!manuelEslesmeler[aktifPazar]) manuelEslesmeler[aktifPazar] = {};
+                manuelEslesmeler[aktifPazar][tUniqueKey] = pIndex;
+                await setDoc(doc(window.firebaseDb, "eslesmeler", docId), { pazar: aktifPazar, tKey: tUniqueKey, pIndex: pIndex, type: 'match' });
+                alert("Eşleşme buluta kaydedildi! ☁️");
             }
+            analiziBaslat();
         };
 
         window.acilacaktanCikar = async function(tIdx) {
-            try {
-                let row = tsoftData[tIdx];
-                let tKod = String(kolonDegeriBul(row, ['web servis kodu', 'stok kodu', 'sku', 'stokkodu', 'tedarikçi stok kodu'])).trim();
-                let tBarkod = String(kolonDegeriBul(row, ['barkod', 'barcode'])).trim();
-                let tIsim = String(kolonDegeriBul(row, ['ürün adı', 'urun adi', 'title', 'product name'])).trim();
-                let tUniqueKey = tKod || tBarkod || tIsim;
-
-                if (acilacakUrunler[aktifPazar] && acilacakUrunler[aktifPazar][tUniqueKey]) {
-                    delete acilacakUrunler[aktifPazar][tUniqueKey];
-                }
-
-                if (window.firebaseDb && window.firebaseMethods) {
-                    const { doc, deleteDoc } = window.firebaseMethods;
-                    let safeKey = tUniqueKey.replace(/[^a-zA-Z0-9]/g, "_");
-                    let docId = `${aktifPazar}_${safeKey}`;
-                    await deleteDoc(doc(window.firebaseDb, "eslesmeler", docId));
-                }
-
-                alert("Ürün açılacaklar listesinden kaldırıldı.");
-                analiziBaslat();
-            } catch (err) {
-                console.error("Kaldırma hatası:", err);
-            }
+            let row = tsoftData[tIdx];
+            let tUniqueKey = String(kolonDegeriBul(row, ['web servis kodu', 'stok kodu', 'sku', 'stokkodu'])).trim() || String(kolonDegeriBul(row, ['barkod'])).trim();
+            if (acilacakUrunler[aktifPazar]) delete acilacakUrunler[aktifPazar][tUniqueKey];
+            const { doc, deleteDoc } = window.firebaseMethods;
+            await deleteDoc(doc(window.firebaseDb, "eslesmeler", `${aktifPazar}_${tUniqueKey.replace(/[^a-zA-Z0-9]/g, "_")}`));
+            analiziBaslat();
         };
 
-        function tablolariFiltrele() {
-            const aramaHataText = document.getElementById('aramaHata').value.toLowerCase();
-            const aramaEslesmeyenText = document.getElementById('aramaEslesmeyen').value.toLowerCase();
-
-            const hataRows = document.querySelectorAll('#tabloIcerik tr');
-            hataRows.forEach(row => {
-                const text = row.innerText.toLowerCase();
-                row.style.display = text.includes(aramaHataText) ? "" : "none";
-            });
-
-            const eslesmeyenRows = document.querySelectorAll('#eslesmeyenTabloIcerik tr');
-            eslesmeyenRows.forEach(row => {
-                const text = row.innerText.toLowerCase();
-                row.style.display = text.includes(aramaEslesmeyenText) ? "" : "none";
-            });
-        }
-
         function analiziBaslat() {
-            if(tsoftData.length === 0) {
-                alert('Lütfen önce T-Soft ana kaynak raporunu yükleyin.');
-                return;
-            }
-            if(pazarVerileri[aktifPazar].length === 0) {
-                alert(`Lütfen önce ${aktifPazar} rapor dosyasını yükleyin.`);
+            if(tsoftData.length === 0 || pazarVerileri[aktifPazar].length === 0) {
+                alert('Lütfen önce T-Soft ve Pazar Yeri Excel dosyalarını yükleyin.');
                 return;
             }
 
             document.getElementById('sonucAlani').classList.remove('hidden');
             document.getElementById('ozetBaslik').innerText = `📊 ${aktifPazar} Karşılaştırma Özeti`;
 
-            const tablo = document.getElementById('tabloIcerik');
-            const acilicakTablo = document.getElementById('acilicakTabloIcerik');
-            const eslesmeyenTablo = document.getElementById('eslesmeyenTabloIcerik');
-            
-            tablo.innerHTML = "";
-            acilicakTablo.innerHTML = "";
-            eslesmeyenTablo.innerHTML = "";
-
-            let eslesenSayisi = 0;
-            let hataSayisi = 0;
-            let acilicakSayisi = 0;
-            let eslesmeyenSayisi = 0;
-
-            let pazarBarkodMap = new Map();
-            let pazarKodMap = new Map();
-            let pazarIsimMap = new Map();
-            let pazarMerchantMap = new Map();
-
+            let pazarBarkodMap = new Map(), pazarKodMap = new Map(), pazarIsimMap = new Map();
             pazarVerileri[aktifPazar].forEach((pRow, idx) => {
                 let pBarkod = String(kolonDegeriBul(pRow, ['barkod', 'barcode'])).trim();
-                let pKod = String(kolonDegeriBul(pRow, ['web servis kodu', 'stok kodu', 'sku', 'stokkodu', 'tedarikçi stok kodu', 'stock code', 'ürün kodu'])).trim();
-                let pMerchant = String(kolonDegeriBul(pRow, ['merchant sku', 'merchant_sku'])).trim();
-                let pIsim = String(kolonDegeriBul(pRow, ['ürün adı', 'urun adi', 'title', 'product name'])).trim().toLowerCase();
-                
-                if(pBarkod) {
-                    pBarkod.split(';').forEach(b => { if(b.trim()) pazarBarkodMap.set(b.trim(), idx); });
-                }
+                let pKod = String(kolonDegeriBul(pRow, ['web servis kodu', 'stok kodu', 'sku', 'stokkodu', 'merchant sku'])).trim();
+                let pIsim = String(kolonDegeriBul(pRow, ['ürün adı', 'urun adi', 'title'])).trim().toLowerCase();
+                if(pBarkod) pBarkod.split(';').forEach(b => { if(b.trim()) pazarBarkodMap.set(b.trim(), idx); });
                 if(pKod) pazarKodMap.set(pKod, idx);
-                if(pMerchant) pazarMerchantMap.set(pMerchant, idx);
                 if(pIsim) pazarIsimMap.set(pIsim, idx);
             });
 
-            let pazarSecenekleriHTML = `<option value="">-- Pazar Yerindeki Ürünü Seç --</option>`;
-            pazarSecenekleriHTML += `<option value="ACILACAK_URUN" style="font-weight:bold; color:#b45309;">🚧 [İŞ PLANINA EKLE] Açılacak Ürün</option>`;
-            
+            let pazarSecenekleriHTML = `<option value="">-- Pazar Yerindeki Ürünü Seç --</option><option value="ACILACAK_URUN" style="font-weight:bold; color:#b45309;">🚧 [İŞ PLANINA EKLE] Açılacak Ürün</option>`;
             pazarVerileri[aktifPazar].forEach((pRow, idx) => {
-                let pIsim = kolonDegeriBul(pRow, ['ürün adı', 'urun adi', 'title', 'product name']);
-                let pSku = kolonDegeriBul(pRow, ['merchant sku', 'merchant_sku', 'stok kodu', 'sku', 'stokkodu', 'tedarikçi stok kodu', 'stock code', 'ürün kodu']);
+                let pIsim = kolonDegeriBul(pRow, ['ürün adı', 'urun adi', 'title']);
+                let pSku = kolonDegeriBul(pRow, ['merchant sku', 'stok kodu', 'sku']);
                 pazarSecenekleriHTML += `<option value="${idx}">${pIsim || ('Ürün #' + idx)} (SKU: ${pSku || '-'})</option>`;
             });
 
-            let htmlContent = "";
-            let eslesmeyenHtmlContent = "";
+            let tabloHTML = "", eslesmeyenHTML = "", acilicakHTML = "";
+            let eslesenSayisi = 0, hataSayisi = 0, acilicakSayisi = 0, eslesmeyenSayisi = 0;
             let acilicakRows = [];
 
             tsoftData.forEach((tRow, tIdx) => {
                 let tBarkod = String(kolonDegeriBul(tRow, ['barkod', 'barcode'])).trim();
-                let tKod = String(kolonDegeriBul(tRow, ['web servis kodu', 'stok kodu', 'sku', 'stokkodu', 'tedarikçi stok kodu'])).trim();
-                let tIsim = String(kolonDegeriBul(tRow, ['ürün adı', 'urun adi', 'title', 'product name'])).trim();
-                let tStok = Number(kolonDegeriBul(tRow, ['stok', 'stok miktari', 'miktar', 'adet'])) || 0;
-                let tFiyat = Number(kolonDegeriBul(tRow, ['kdv dahil fiyat', 'satis fiyati', 'fiyat', 'tutar'])) || 0;
-
+                let tKod = String(kolonDegeriBul(tRow, ['web servis kodu', 'stok kodu', 'sku'])).trim();
+                let tIsim = String(kolonDegeriBul(tRow, ['ürün adı', 'urun adi', 'title'])).trim();
+                let tStok = Number(kolonDegeriBul(tRow, ['stok', 'stok miktari', 'miktar'])) || 0;
+                let tFiyat = Number(kolonDegeriBul(tRow, ['kdv dahil fiyat', 'satis fiyati', 'fiyat'])) || 0;
                 let tUniqueKey = tKod || tBarkod || tIsim;
 
-                if (acilacakUrunler[aktifPazar] && acilacakUrunler[aktifPazar][tUniqueKey]) {
+                if (acilacakUrunler[aktifPazar]?.[tUniqueKey]) {
                     acilicakSayisi++;
                     acilicakRows.push({ tIsim, tKod, tBarkod, tStok, tFiyat, tIdx });
                     return;
                 }
 
-                let eslesenPazarIndex = null;
-                let yontem = "";
-
-                if(manuelEslesmeler[aktifPazar] && manuelEslesmeler[aktifPazar][tUniqueKey] !== undefined) {
-                    eslesenPazarIndex = manuelEslesmeler[aktifPazar][tUniqueKey];
-                    yontem = '<span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-semibold">Buluttan Öğrenilmiş</span>';
-                }
-                else if(tBarkod && pazarBarkodMap.has(tBarkod)) {
-                    eslesenPazarIndex = pazarBarkodMap.get(tBarkod);
-                    yontem = '<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">1. Aşama: Barkod</span>';
-                } 
-                else if(tKod && (pazarKodMap.has(tKod) || pazarMerchantMap.has(tKod))) {
-                    eslesenPazarIndex = pazarKodMap.get(tKod) !== undefined ? pazarKodMap.get(tKod) : pazarMerchantMap.get(tKod);
-                    yontem = '<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-semibold">2. Aşama: Stok Kodu</span>';
-                } 
-                else if(tIsim && pazarIsimMap.has(tIsim.toLowerCase())) {
-                    eslesenPazarIndex = pazarIsimMap.get(tIsim.toLowerCase());
-                    yontem = '<span class="bg-amber-100 text-amber-800 px-2 py-1 rounded text-xs font-semibold">3. Aşama: Ürün Adı</span>';
+                let eslesenIdx = null, yontem = "";
+                if(manuelEslesmeler[aktifPazar]?.[tUniqueKey] !== undefined) {
+                    eslesenIdx = manuelEslesmeler[aktifPazar][tUniqueKey];
+                    yontem = '<span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-semibold">Buluttan Eşleşti</span>';
+                } else if(tBarkod && pazarBarkodMap.has(tBarkod)) {
+                    eslesenIdx = pazarBarkodMap.get(tBarkod);
+                    yontem = '<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">Barkod</span>';
+                } else if(tKod && pazarKodMap.has(tKod)) {
+                    eslesenIdx = pazarKodMap.get(tKod);
+                    yontem = '<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-semibold">Stok Kodu</span>';
+                } else if(tIsim && pazarIsimMap.has(tIsim.toLowerCase())) {
+                    eslesenIdx = pazarIsimMap.get(tIsim.toLowerCase());
+                    yontem = '<span class="bg-amber-100 text-amber-800 px-2 py-1 rounded text-xs font-semibold">Ürün Adı</span>';
                 }
 
-                if(eslesenPazarIndex !== null && pazarVerileri[aktifPazar][eslesenPazarIndex] !== undefined) {
+                if(eslesenIdx !== null && pazarVerileri[aktifPazar][eslesenIdx]) {
                     eslesenSayisi++;
-                    let eslesenPazarRow = pazarVerileri[aktifPazar][eslesenPazarIndex];
-                    let pStok = Number(kolonDegeriBul(eslesenPazarRow, ['stok', 'stok miktari', 'miktar', 'adet'])) || 0;
-                    let pFiyat = Number(kolonDegeriBul(eslesenPazarRow, ['kdv dahil fiyat', 'satis fiyati', 'fiyat', 'tutar'])) || 0;
+                    let pRow = pazarVerileri[aktifPazar][eslesenIdx];
+                    let pStok = Number(kolonDegeriBul(pRow, ['stok', 'stok miktari', 'miktar'])) || 0;
+                    let pFiyat = Number(kolonDegeriBul(pRow, ['kdv dahil fiyat', 'satis fiyati', 'fiyat'])) || 0;
 
-                    let hataListesi = [];
-                    if(tStok <= 0 && pStok > 0) {
-                        hataListesi.push('<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold">Stok Hatası: T-Soft\'ta 0, Pazar Yerinde Açık!</span>');
-                    }
-                    if(tFiyat > 0 && pFiyat > 0 && Math.abs(tFiyat - pFiyat) > 1) {
-                        hataListesi.push('<span class="bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs font-bold">Fiyat Uyumsuzluğu</span>');
-                    }
+                    let hatalar = [];
+                    if(tStok <= 0 && pStok > 0) hatalar.push('<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold">Stok Hatası (T-Soft: 0)</span>');
+                    if(tFiyat > 0 && pFiyat > 0 && Math.abs(tFiyat - pFiyat) > 1) hatalar.push('<span class="bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs font-bold">Fiyat Uyumsuzluğu</span>');
 
-                    if(hataListesi.length > 0) {
+                    if(hatalar.length > 0) {
                         hataSayisi++;
-                        htmlContent += `
-                            <tr class="border-b border-slate-100 hover:bg-slate-50">
-                                <td class="p-3">${yontem}</td>
-                                <td class="p-3 font-medium">${tIsim}</td>
-                                <td class="p-3 text-blue-700 font-semibold">Stok: ${tStok} | Fiyat: ${tFiyat} TL</td>
-                                <td class="p-3 text-slate-700">Stok: ${pStok} | Fiyat: ${pFiyat} TL</td>
-                                <td class="p-3 space-y-1">${hataListesi.join('<br>')}</td>
-                            </tr>
-                        `;
+                        tabloHTML += `<tr class="border-b border-slate-100"><td class="p-3">${yontem}</td><td class="p-3 font-medium">${tIsim}</td><td class="p-3 text-blue-700">Stok: ${tStok} | Fiyat: ${tFiyat}</td><td class="p-3">Stok: ${pStok} | Fiyat: ${pFiyat}</td><td class="p-3">${hatalar.join('<br>')}</td></tr>`;
                     }
                 } else {
                     eslesmeyenSayisi++;
-                    eslesmeyenHtmlContent += `
-                        <tr class="border-b border-slate-100 hover:bg-slate-50">
-                            <td class="p-3 font-medium">${tIsim}<br><span class="text-xs text-slate-400 font-mono">Kod: ${tKod || '-'} | Barkod: ${tBarkod || '-'}</span></td>
-                            <td class="p-3 text-blue-700 font-semibold">Stok: ${tStok} | Fiyat: ${tFiyat} TL</td>
-                            <td class="p-3">
-                                <select id="select-${tIdx}" class="w-full p-2 border border-slate-300 rounded text-xs bg-white">
-                                    ${pazarSecenekleriHTML}
-                                </select>
-                            </td>
-                            <td class="p-3 text-center">
-                                <button type="button" onclick="manuelEsleKaydet(${tIdx})" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded text-xs font-semibold shadow">
-                                    Buluta Öğret / Kaydet
-                                </button>
-                            </td>
-                        </tr>
-                    `;
+                    eslesmeyenHTML += `<tr class="border-b border-slate-100"><td class="p-3 font-medium">${tIsim}<br><span class="text-xs text-slate-400">Kod: ${tKod || '-'}</span></td><td class="p-3 text-blue-700">Stok: ${tStok} | Fiyat: ${tFiyat}</td><td class="p-3"><select id="select-${tIdx}" class="w-full p-2 border rounded text-xs bg-white">${pazarSecenekleriHTML}</select></td><td class="p-3 text-center"><button onclick="manuelEsleKaydet(${tIdx})" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded text-xs font-semibold shadow">Buluta Kaydet</button></td></tr>`;
                 }
             });
 
-            tablo.innerHTML = htmlContent || `<tr><td colspan="5" class="p-6 text-center text-slate-500">Tebrikler! Eşleşen ürünlerde hiçbir hata bulunamadı. 🎉</td></tr>`;
-            eslesmeyenTablo.innerHTML = eslesmeyenHtmlContent || `<tr><td colspan="4" class="p-6 text-center text-slate-500">Harika! İşaretlenmemiş eşleşmeyen ürün kalmadı.</td></tr>`;
-
-            if (acilicakRows.length > 0) {
-                let acilicakHTML = "";
-                acilicakRows.forEach(item => {
-                    acilicakHTML += `
-                        <tr class="border-b border-slate-100 hover:bg-slate-50">
-                            <td class="p-3 font-medium">${item.tIsim}</td>
-                            <td class="p-3 text-xs font-mono text-slate-500">Kod: ${item.tKod || '-'} | Barkod: ${item.tBarkod || '-'}</td>
-                            <td class="p-3 text-blue-700 font-semibold">Stok: ${item.tStok} | Fiyat: ${item.tFiyat} TL</td>
-                            <td class="p-3 text-center">
-                                <button type="button" onclick="acilacaktanCikar(${item.tIdx})" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded text-xs font-semibold shadow">
-                                    Listeden Çıkar
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                });
-                acilicakTablo.innerHTML = acilicakHTML;
-            } else {
-                acilicakTablo.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-500">Henüz iş planında açılacak olarak işaretlenen ürün yok.</td></tr>`;
-            }
+            document.getElementById('tabloIcerik').innerHTML = tabloHTML || `<tr><td colspan="5" class="p-6 text-center text-slate-500">Hata bulunamadı! 🎉</td></tr>`;
+            document.getElementById('eslesmeyenTabloIcerik').innerHTML = eslesmeyenHTML || `<tr><td colspan="4" class="p-6 text-center text-slate-500">Bekleyen ürün kalmadı.</td></tr>`;
+            document.getElementById('acilicakTabloIcerik').innerHTML = acilicakRows.map(i => `<tr class="border-b border-slate-100"><td class="p-3 font-medium">${i.tIsim}</td><td class="p-3 text-xs font-mono">${i.tKod || '-'}</td><td class="p-3 text-blue-700">Stok: ${i.tStok} | Fiyat: ${i.tFiyat}</td><td class="p-3 text-center"><button onclick="acilacaktanCikar(${i.tIdx})" class="bg-rose-600 text-white px-3 py-1.5 rounded text-xs font-semibold">Çıkar</button></td></tr>`).join('') || `<tr><td colspan="4" class="p-6 text-center text-slate-500">İş planında açılacak ürün yok.</td></tr>`;
 
             document.getElementById('ozetIcerik').innerHTML = `
-                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                    <div class="text-2xl font-bold text-blue-600">${tsoftData.length}</div>
-                    <div class="text-sm text-slate-500 mt-1">T-Soft Ürün</div>
-                </div>
-                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                    <div class="text-2xl font-bold text-slate-700">${eslesenSayisi}</div>
-                    <div class="text-sm text-slate-500 mt-1">Eşleşen Ürün</div>
-                </div>
-                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                    <div class="text-2xl font-bold text-red-600">${hataSayisi}</div>
-                    <div class="text-sm text-slate-500 mt-1">Kritik Hata</div>
-                </div>
-                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                    <div class="text-2xl font-bold text-amber-600">${acilicakSayisi}</div>
-                    <div class="text-sm text-slate-500 mt-1">Açılacak (İş Planında)</div>
-                </div>
-                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                    <div class="text-2xl font-bold text-slate-500">${eslesmeyenSayisi}</div>
-                    <div class="text-sm text-slate-500 mt-1">Bekleyen</div>
-                </div>
+                <div class="bg-slate-50 p-4 rounded-lg border"><div class="text-2xl font-bold text-blue-600">${tsoftData.length}</div><div class="text-sm text-slate-500">T-Soft Ürün</div></div>
+                <div class="bg-slate-50 p-4 rounded-lg border"><div class="text-2xl font-bold text-slate-700">${eslesenSayisi}</div><div class="text-sm text-slate-500">Eşleşen</div></div>
+                <div class="bg-slate-50 p-4 rounded-lg border"><div class="text-2xl font-bold text-red-600">${hataSayisi}</div><div class="text-sm text-slate-500">Kritik Hata</div></div>
+                <div class="bg-slate-50 p-4 rounded-lg border"><div class="text-2xl font-bold text-amber-600">${acilicakSayisi}</div><div class="text-sm text-slate-500">Açılacak Ürün</div></div>
+                <div class="bg-slate-50 p-4 rounded-lg border"><div class="text-2xl font-bold text-slate-500">${eslesmeyenSayisi}</div><div class="text-sm text-slate-500">Bekleyen</div></div>
             `;
         }
     </script>
