@@ -114,16 +114,16 @@
 
             <!-- Eşleşmeyen / Manuel Eşleştirme Bekleyen Ürünler -->
             <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
-                <h2 class="text-lg font-bold text-slate-800 mb-4">🔍 Otomatik Eşleşmeyenler (Buluta Öğret veya İş Planına Ekle)</h2>
-                <p class="text-xs text-slate-500 mb-4">İster pazar yerindeki gerçek karşılığıyla eşleştir, ister "Açılacak Ürün" olarak işaretle.</p>
+                <h2 class="text-lg font-bold text-slate-800 mb-4">🔍 Otomatik Eşleşmeyenler</h2>
+                <p class="text-xs text-slate-500 mb-4">Pazar yerinde bulamadıysan, açılır listeden <b>"🚧 [İŞ PLANINA EKLE] Açılacak Ürün"</b> seçeneğini seçip <b>Buluta Öğret</b> butonuna basabilirsin.</p>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse text-sm text-slate-700">
                         <thead>
                             <tr class="bg-slate-100 border-b border-slate-200">
                                 <th class="p-3">T-Soft Ürün Adı / Kodu</th>
                                 <th class="p-3">T-Soft Stok / Fiyat</th>
-                                <th class="p-3">Pazar Yerinden Eşleşen Ürünü Seç</th>
-                                <th class="p-3 text-center">İşlemler</th>
+                                <th class="p-3">İşlem / Pazar Yeri Eşleşmesi</th>
+                                <th class="p-3 text-center">İşlem</th>
                             </tr>
                         </thead>
                         <tbody id="eslesmeyenTabloIcerik"></tbody>
@@ -236,59 +236,55 @@
 
             const selectEl = document.getElementById(`select-${tIdx}`);
             if(!selectEl || selectEl.value === "") {
-                alert("Lütfen pazar yerinden ilgili ürünü seçin.");
+                alert("Lütfen pazar yerinden ürün seçin veya 'İş Planına Ekle' seçeneğini seçin.");
                 return;
             }
             
-            const secilenPazarIndex = selectEl.value;
-            manuelEslesmeler[aktifPazar][tUniqueKey] = secilenPazarIndex;
-            if (acilacakUrunler[aktifPazar][tUniqueKey]) delete acilacakUrunler[aktifPazar][tUniqueKey];
+            const secilenDeger = selectEl.value;
 
-            if (window.firebaseDb) {
-                try {
-                    const { doc, setDoc } = window.firebaseMethods;
-                    let docId = `${aktifPazar}_${tUniqueKey}`.replace(/[^a-zA-Z0-9]/g, "_");
-                    await setDoc(doc(window.firebaseDb, "eslesmeler", docId), {
-                        pazar: aktifPazar,
-                        tKey: tUniqueKey,
-                        pIndex: Number(secilenPazarIndex),
-                        type: 'match'
-                    });
-                    alert("Eşleşme buluta kaydedildi! ☁️️");
-                } catch (err) {
-                    console.log("Buluta kayıt hatası:", err);
+            // Eğer kullanıcı "İş Planı" seçtiyse
+            if (secilenDeger === "ACILACAK_URUN") {
+                if (!acilacakUrunler[aktifPazar]) acilacakUrunler[aktifPazar] = {};
+                acilacakUrunler[aktifPazar][tUniqueKey] = true;
+                if (manuelEslesmeler[aktifPazar][tUniqueKey] !== undefined) delete manuelEslesmeler[aktifPazar][tUniqueKey];
+
+                if (window.firebaseDb) {
+                    try {
+                        const { doc, setDoc } = window.firebaseMethods;
+                        let docId = `${aktifPazar}_${tUniqueKey}`.replace(/[^a-zA-Z0-9]/g, "_");
+                        await setDoc(doc(window.firebaseDb, "eslesmeler", docId), {
+                            pazar: aktifPazar,
+                            tKey: tUniqueKey,
+                            type: 'acilacak'
+                        });
+                    } catch (err) {
+                        console.log("Buluta kayıt hatası:", err);
+                    }
                 }
+                alert("Ürün iş planına başarıyla eklendi! 🚧");
+            } else {
+                // Normal eşleşme
+                let secilenPazarIndex = Number(secilenDeger);
+                manuelEslesmeler[aktifPazar][tUniqueKey] = secilenPazarIndex;
+                if (acilacakUrunler[aktifPazar][tUniqueKey]) delete acilacakUrunler[aktifPazar][tUniqueKey];
+
+                if (window.firebaseDb) {
+                    try {
+                        const { doc, setDoc } = window.firebaseMethods;
+                        let docId = `${aktifPazar}_${tUniqueKey}`.replace(/[^a-zA-Z0-9]/g, "_");
+                        await setDoc(doc(window.firebaseDb, "eslesmeler", docId), {
+                            pazar: aktifPazar,
+                            tKey: tUniqueKey,
+                            pIndex: secilenPazarIndex,
+                            type: 'match'
+                        });
+                    } catch (err) {
+                        console.log("Buluta kayıt hatası:", err);
+                    }
+                }
+                alert("Eşleşme buluta kaydedildi! ☁️");
             }
 
-            analiziBaslat();
-        }
-
-        async function acilacakIsaretle(tIdx) {
-            let row = tsoftData[tIdx];
-            let tKod = String(kolonDegeriBul(row, ['web servis kodu', 'stok kodu', 'sku', 'stokkodu', 'tedarikçi stok kodu'])).trim();
-            let tBarkod = String(kolonDegeriBul(row, ['barkod', 'barcode'])).trim();
-            let tIsim = String(kolonDegeriBul(row, ['ürün adı', 'urun adi', 'title', 'product name'])).trim();
-            let tUniqueKey = tKod || tBarkod || tIsim;
-
-            if (!acilacakUrunler[aktifPazar]) acilacakUrunler[aktifPazar] = {};
-            acilacakUrunler[aktifPazar][tUniqueKey] = true;
-            if (manuelEslesmeler[aktifPazar][tUniqueKey] !== undefined) delete manuelEslesmeler[aktifPazar][tUniqueKey];
-
-            if (window.firebaseDb) {
-                try {
-                    const { doc, setDoc } = window.firebaseMethods;
-                    let docId = `${aktifPazar}_${tUniqueKey}`.replace(/[^a-zA-Z0-9]/g, "_");
-                    await setDoc(doc(window.firebaseDb, "eslesmeler", docId), {
-                        pazar: aktifPazar,
-                        tKey: tUniqueKey,
-                        type: 'acilacak'
-                    });
-                } catch (err) {
-                    console.log("Buluta kayıt hatası:", err);
-                }
-            }
-
-            alert("Ürün 'Açılacak Ürün (İş Planında)' olarak işaretlendi! 🚧");
             analiziBaslat();
         }
 
@@ -360,7 +356,10 @@
                 if(pIsim) pazarIsimMap.set(pIsim, idx);
             });
 
+            // Açılır kutunun en başına İş Planı seçeneğini ekliyoruz
             let pazarSecenekleriHTML = `<option value="">-- Pazar Yerindeki Ürünü Seç --</option>`;
+            pazarSecenekleriHTML += `<option value="ACILACAK_URUN" style="font-weight:bold; color:#b45309;">🚧 [İŞ PLANINA EKLE] Açılacak Ürün</option>`;
+            
             pazarVerileri[aktifPazar].forEach((pRow, idx) => {
                 let pIsim = kolonDegeriBul(pRow, ['ürün adı', 'urun adi', 'title', 'product name']);
                 let pSku = kolonDegeriBul(pRow, ['merchant sku', 'merchant_sku', 'stok kodu', 'sku', 'stokkodu', 'tedarikçi stok kodu', 'stock code', 'ürün kodu']);
@@ -369,8 +368,6 @@
 
             let htmlContent = "";
             let eslesmeyenHtmlContent = "";
-
-            // İş planı tablosunu DOM üzerinden güvenli doldurmak için dizi tutalım
             let acilicakRows = [];
 
             tsoftData.forEach((tRow, tIdx) => {
@@ -382,7 +379,6 @@
 
                 let tUniqueKey = tKod || tBarkod || tIsim;
 
-                // 1. Kontrol: İş planında açılacak olarak işaretlenmiş mi?
                 if (acilacakUrunler[aktifPazar] && acilacakUrunler[aktifPazar][tUniqueKey]) {
                     acilicakSayisi++;
                     acilicakRows.push({ tIsim, tKod, tBarkod, tStok, tFiyat, tIdx });
@@ -442,16 +438,13 @@
                             <td class="p-3 font-medium">${tIsim}<br><span class="text-xs text-slate-400 font-mono">Kod: ${tKod || '-'} | Barkod: ${tBarkod || '-'}</span></td>
                             <td class="p-3 text-blue-700 font-semibold">Stok: ${tStok} | Fiyat: ${tFiyat} TL</td>
                             <td class="p-3">
-                                <select id="select-${tIdx}" class="w-full p-2 border border-slate-300 rounded text-xs bg-white mb-2">
+                                <select id="select-${tIdx}" class="w-full p-2 border border-slate-300 rounded text-xs bg-white">
                                     ${pazarSecenekleriHTML}
                                 </select>
                             </td>
-                            <td class="p-3 text-center space-y-2">
-                                <button type="button" class="btn-ogret w-full bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded text-xs font-semibold shadow" data-idx="${tIdx}">
-                                    Buluta Öğret
-                                </button>
-                                <button type="button" class="btn-is-plani w-full bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded text-xs font-semibold shadow" data-idx="${tIdx}">
-                                    🚧 İş Planına Ekle
+                            <td class="p-3 text-center">
+                                <button type="button" class="btn-ogret bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded text-xs font-semibold shadow" data-idx="${tIdx}">
+                                    Buluta Öğret / Kaydet
                                 </button>
                             </td>
                         </tr>
@@ -462,7 +455,6 @@
             tablo.innerHTML = htmlContent || `<tr><td colspan="5" class="p-6 text-center text-slate-500">Tebrikler! Eşleşen ürünlerde hiçbir hata bulunamadı. 🎉</td></tr>`;
             eslesmeyenTablo.innerHTML = eslesmeyenHtmlContent || `<tr><td colspan="4" class="p-6 text-center text-slate-500">Harika! İşaretlenmemiş eşleşmeyen ürün kalmadı.</td></tr>`;
 
-            // İş planı tablosunu güvenli şekilde dolduralım ve event listener atayalım
             if (acilicakRows.length > 0) {
                 let acilicakHTML = "";
                 acilicakRows.forEach(item => {
@@ -484,16 +476,10 @@
                 acilicakTablo.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-500">Henüz iş planında açılacak olarak işaretlenen ürün yok.</td></tr>`;
             }
 
-            // Butonlara modern Event Listener atamaları (Tıklama sorununu %100 çözer)
+            // Olay dinleyicileri
             document.querySelectorAll('.btn-ogret').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     manuelEsleKaydet(Number(e.target.getAttribute('data-idx')));
-                });
-            });
-
-            document.querySelectorAll('.btn-is-plani').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    acilacakIsaretle(Number(e.target.getAttribute('data-idx')));
                 });
             });
 
