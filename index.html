@@ -243,24 +243,38 @@
             const secilenDeger = selectEl.value;
 
             if (secilenDeger === "ACILACAK_URUN") {
-                if (!acilacakUrunler[aktifPazar]) acilacakUrunler[aktifPazar] = {};
-                acilacakUrunler[aktifPazar][tUniqueKey] = true;
-                if (manuelEslesmeler[aktifPazar][tUniqueKey] !== undefined) delete manuelEslesmeler[aktifPazar][tUniqueKey];
-
-                if (window.firebaseDb) {
-                    try {
-                        const { doc, setDoc } = window.firebaseMethods;
-                        let docId = `${aktifPazar}_${tUniqueKey}`.replace(/[^a-zA-Z0-9]/g, "_");
-                        await setDoc(doc(window.firebaseDb, "eslesmeler", docId), {
-                            pazar: aktifPazar,
-                            tKey: tUniqueKey,
-                            type: 'acilacak'
-                        });
-                    } catch (err) {
-                        console.log("Buluta kayıt hatası:", err);
-                    }
+                if (!window.firebaseDb) {
+                    alert("Bulut bağlantısı hazır değil. Lütfen sayfayı yenileyip tekrar deneyin.");
+                    return;
                 }
-                alert("Ürün iş planına başarıyla eklendi! 🚧");
+
+                try {
+                    const { doc, setDoc } = window.firebaseMethods;
+                    const docId = `${aktifPazar}_${tUniqueKey}`.replace(/[^a-zA-Z0-9]/g, "_");
+                    await setDoc(doc(window.firebaseDb, "eslesmeler", docId), {
+                        pazar: aktifPazar,
+                        tKey: tUniqueKey,
+                        type: 'acilacak',
+                        updatedAt: new Date().toISOString()
+                    });
+
+                    // Kayıt başarılıysa ürünü yerel olarak da iş planına taşı.
+                    if (!acilacakUrunler[aktifPazar]) acilacakUrunler[aktifPazar] = {};
+                    acilacakUrunler[aktifPazar][tUniqueKey] = true;
+                    if (manuelEslesmeler[aktifPazar][tUniqueKey] !== undefined) {
+                        delete manuelEslesmeler[aktifPazar][tUniqueKey];
+                    }
+
+                    alert("Ürün buluta kaydedildi ve iş planına eklendi! 🚧");
+                    analiziBaslat();
+                    document.getElementById('acilicakTabloIcerik')
+                        .closest('.bg-white')
+                        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } catch (err) {
+                    console.error("Buluta kayıt hatası:", err);
+                    alert("Ürün buluta kaydedilemedi. Firestore güvenlik kurallarını ve internet bağlantısını kontrol edin.");
+                }
+                return;
             } else {
                 let secilenPazarIndex = Number(secilenDeger);
                 manuelEslesmeler[aktifPazar][tUniqueKey] = secilenPazarIndex;
