@@ -227,7 +227,7 @@
             return "";
         }
 
-        window.manuelEsleKaydet = async function(tIdx) {
+        async function manuelEsleKaydet(tIdx) {
             let row = tsoftData[tIdx];
             let tKod = String(kolonDegeriBul(row, ['web servis kodu', 'stok kodu', 'sku', 'stokkodu', 'tedarikçi stok kodu'])).trim();
             let tBarkod = String(kolonDegeriBul(row, ['barkod', 'barcode'])).trim();
@@ -254,7 +254,7 @@
                         pIndex: Number(secilenPazarIndex),
                         type: 'match'
                     });
-                    alert("Eşleşme buluta kaydedildi! ☁️");
+                    alert("Eşleşme buluta kaydedildi! ☁️️");
                 } catch (err) {
                     console.log("Buluta kayıt hatası:", err);
                 }
@@ -263,7 +263,7 @@
             analiziBaslat();
         }
 
-        window.acilacakIsaretle = async function(tIdx) {
+        async function acilacakIsaretle(tIdx) {
             let row = tsoftData[tIdx];
             let tKod = String(kolonDegeriBul(row, ['web servis kodu', 'stok kodu', 'sku', 'stokkodu', 'tedarikçi stok kodu'])).trim();
             let tBarkod = String(kolonDegeriBul(row, ['barkod', 'barcode'])).trim();
@@ -292,7 +292,7 @@
             analiziBaslat();
         }
 
-        window.acilacaktanCikar = async function(tIdx) {
+        async function acilacaktanCikar(tIdx) {
             let row = tsoftData[tIdx];
             let tKod = String(kolonDegeriBul(row, ['web servis kodu', 'stok kodu', 'sku', 'stokkodu', 'tedarikçi stok kodu'])).trim();
             let tBarkod = String(kolonDegeriBul(row, ['barkod', 'barcode'])).trim();
@@ -348,8 +348,8 @@
 
             pazarVerileri[aktifPazar].forEach((pRow, idx) => {
                 let pBarkod = String(kolonDegeriBul(pRow, ['barkod', 'barcode'])).trim();
-                let pKod = String(kolonDegeriBul(pRow, ['web servis kodu', 'stok kodu', 'sku', 'stokkodu', 'tedarikçi stok kodu'])).trim();
-                let pMerchant = String(kolonDegeriBul(pRow, ['merchant sku'])).trim();
+                let pKod = String(kolonDegeriBul(pRow, ['web servis kodu', 'stok kodu', 'sku', 'stokkodu', 'tedarikçi stok kodu', 'stock code', 'ürün kodu'])).trim();
+                let pMerchant = String(kolonDegeriBul(pRow, ['merchant sku', 'merchant_sku'])).trim();
                 let pIsim = String(kolonDegeriBul(pRow, ['ürün adı', 'urun adi', 'title', 'product name'])).trim().toLowerCase();
                 
                 if(pBarkod) {
@@ -363,13 +363,15 @@
             let pazarSecenekleriHTML = `<option value="">-- Pazar Yerindeki Ürünü Seç --</option>`;
             pazarVerileri[aktifPazar].forEach((pRow, idx) => {
                 let pIsim = kolonDegeriBul(pRow, ['ürün adı', 'urun adi', 'title', 'product name']);
-                let pSku = kolonDegeriBul(pRow, ['merchant sku', 'stok kodu', 'sku']);
+                let pSku = kolonDegeriBul(pRow, ['merchant sku', 'merchant_sku', 'stok kodu', 'sku', 'stokkodu', 'tedarikçi stok kodu', 'stock code', 'ürün kodu']);
                 pazarSecenekleriHTML += `<option value="${idx}">${pIsim || ('Ürün #' + idx)} (SKU: ${pSku || '-'})</option>`;
             });
 
             let htmlContent = "";
-            let acilicakHtmlContent = "";
             let eslesmeyenHtmlContent = "";
+
+            // İş planı tablosunu DOM üzerinden güvenli doldurmak için dizi tutalım
+            let acilicakRows = [];
 
             tsoftData.forEach((tRow, tIdx) => {
                 let tBarkod = String(kolonDegeriBul(tRow, ['barkod', 'barcode'])).trim();
@@ -383,18 +385,7 @@
                 // 1. Kontrol: İş planında açılacak olarak işaretlenmiş mi?
                 if (acilacakUrunler[aktifPazar] && acilacakUrunler[aktifPazar][tUniqueKey]) {
                     acilicakSayisi++;
-                    acilicakHtmlContent += `
-                        <tr class="border-b border-slate-100 hover:bg-slate-50">
-                            <td class="p-3 font-medium">${tIsim}</td>
-                            <td class="p-3 text-xs font-mono text-slate-500">Kod: ${tKod || '-'} | Barkod: ${tBarkod || '-'}</td>
-                            <td class="p-3 text-blue-700 font-semibold">Stok: ${tStok} | Fiyat: ${tFiyat} TL</td>
-                            <td class="p-3 text-center">
-                                <button onclick="acilacaktanCikar(${tIdx})" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded text-xs font-semibold shadow">
-                                    Listeden Çıkar
-                                </button>
-                            </td>
-                        </tr>
-                    `;
+                    acilicakRows.push({ tIsim, tKod, tBarkod, tStok, tFiyat, tIdx });
                     return;
                 }
 
@@ -456,10 +447,10 @@
                                 </select>
                             </td>
                             <td class="p-3 text-center space-y-2">
-                                <button onclick="manuelEsleKaydet(${tIdx})" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded text-xs font-semibold shadow">
+                                <button type="button" class="btn-ogret w-full bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded text-xs font-semibold shadow" data-idx="${tIdx}">
                                     Buluta Öğret
                                 </button>
-                                <button onclick="acilacakIsaretle(${tIdx})" class="w-full bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded text-xs font-semibold shadow">
+                                <button type="button" class="btn-is-plani w-full bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded text-xs font-semibold shadow" data-idx="${tIdx}">
                                     🚧 İş Planına Ekle
                                 </button>
                             </td>
@@ -469,11 +460,51 @@
             });
 
             tablo.innerHTML = htmlContent || `<tr><td colspan="5" class="p-6 text-center text-slate-500">Tebrikler! Eşleşen ürünlerde hiçbir hata bulunamadı. 🎉</td></tr>`;
-            acilicakTablo.innerHTML = acilicakHtmlContent || `<tr><td colspan="4" class="p-6 text-center text-slate-500">Henüz iş planında açılacak olarak işaretlenen ürün yok.</td></tr>`;
             eslesmeyenTablo.innerHTML = eslesmeyenHtmlContent || `<tr><td colspan="4" class="p-6 text-center text-slate-500">Harika! İşaretlenmemiş eşleşmeyen ürün kalmadı.</td></tr>`;
 
+            // İş planı tablosunu güvenli şekilde dolduralım ve event listener atayalım
+            if (acilicakRows.length > 0) {
+                let acilicakHTML = "";
+                acilicakRows.forEach(item => {
+                    acilicakHTML += `
+                        <tr class="border-b border-slate-100 hover:bg-slate-50">
+                            <td class="p-3 font-medium">${item.tIsim}</td>
+                            <td class="p-3 text-xs font-mono text-slate-500">Kod: ${item.tKod || '-'} | Barkod: ${item.tBarkod || '-'}</td>
+                            <td class="p-3 text-blue-700 font-semibold">Stok: ${item.tStok} | Fiyat: ${item.tFiyat} TL</td>
+                            <td class="p-3 text-center">
+                                <button type="button" class="btn-cikar bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded text-xs font-semibold shadow" data-idx="${item.tIdx}">
+                                    Listeden Çıkar
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                acilicakTablo.innerHTML = acilicakHTML;
+            } else {
+                acilicakTablo.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-500">Henüz iş planında açılacak olarak işaretlenen ürün yok.</td></tr>`;
+            }
+
+            // Butonlara modern Event Listener atamaları (Tıklama sorununu %100 çözer)
+            document.querySelectorAll('.btn-ogret').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    manuelEsleKaydet(Number(e.target.getAttribute('data-idx')));
+                });
+            });
+
+            document.querySelectorAll('.btn-is-plani').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    acilacakIsaretle(Number(e.target.getAttribute('data-idx')));
+                });
+            });
+
+            document.querySelectorAll('.btn-cikar').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    acilacaktanCikar(Number(e.target.getAttribute('data-idx')));
+                });
+            });
+
             document.getElementById('ozetIcerik').innerHTML = `
-                <div class="bg-slate-55 p-4 rounded-lg border border-slate-200">
+                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
                     <div class="text-2xl font-bold text-blue-600">${tsoftData.length}</div>
                     <div class="text-sm text-slate-500 mt-1">T-Soft Ürün</div>
                 </div>
