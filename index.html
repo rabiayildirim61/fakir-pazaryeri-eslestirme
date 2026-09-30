@@ -1,4 +1,139 @@
-<script>
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>T-Soft Çoklu Pazar Yeri Bulut Yönetim Paneli</title>
+    <!-- Tailwind CSS ve SheetJS (Excel okuyucu) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Firebase SDK (v12) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDTX7Ul5CQPG1Hhe5WOJi29C7AOR4fP574",
+            authDomain: "pazaryeri-karsilastirma.firebaseapp.com",
+            projectId: "pazaryeri-karsilastirma",
+            storageBucket: "pazaryeri-karsilastirma.firebasestorage.app",
+            messagingSenderId: "632218366818",
+            appId: "1:632218366818:web:c981ad7e0bcd1bccf5323b",
+            measurementId: "G-CGRQBEL288"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.firebaseDb = db;
+        window.firebaseMethods = { collection, getDocs, setDoc, doc, deleteDoc };
+    </script>
+</head>
+<body class="bg-slate-50 min-h-screen p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Başlık -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6 border border-slate-200">
+            <h1 class="text-2xl font-bold text-slate-800">☁️ T-Soft Bulut Tabanlı Pazar Yeri Kontrol Paneli</h1>
+            <p class="text-slate-600 mt-1">Ana kaynak **T-Soft** verisini yükle, pazar yerini seç ve eşleştirmeleri ya da iş planındaki açılacak ürünleri buluta kaydet.</p>
+        </div>
+
+        <!-- T-Soft Ortak Yükleme Alanı -->
+        <div class="bg-blue-50 p-6 rounded-xl shadow-sm border border-blue-200 mb-6">
+            <label class="block text-sm font-bold text-blue-900 mb-2">⭐ Ortak Ana Kaynak: T-Soft Raporu</label>
+            <input type="file" id="tsoftFile" accept=".xlsx, .xls, .csv" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
+            <p id="tsoftDurum" class="text-xs text-blue-700 mt-2">Henüz T-Soft dosyası yüklenmedi.</p>
+        </div>
+
+        <!-- Pazar Yeri Sekmeleri -->
+        <div class="flex flex-wrap gap-2 mb-6 border-b border-slate-200 pb-4" id="pazarSekmeleri">
+            <button onclick="pazarSec('Trendyol')" id="btn-Trendyol" class="px-5 py-2.5 rounded-lg font-semibold text-sm bg-blue-600 text-white shadow-sm transition">Trendyol</button>
+            <button onclick="pazarSec('Hepsiburada')" id="btn-Hepsiburada" class="px-5 py-2.5 rounded-lg font-semibold text-sm bg-white text-slate-600 border border-slate-300 hover:bg-slate-100 transition">Hepsiburada</button>
+            <button onclick="pazarSec('Amazon')" id="btn-Amazon" class="px-5 py-2.5 rounded-lg font-semibold text-sm bg-white text-slate-600 border border-slate-300 hover:bg-slate-100 transition">Amazon</button>
+            <button onclick="pazarSec('N11')" id="btn-N11" class="px-5 py-2.5 rounded-lg font-semibold text-sm bg-white text-slate-600 border border-slate-300 hover:bg-slate-100 transition">N11</button>
+            <button onclick="pazarSec('İdefix')" id="btn-İdefix" class="px-5 py-2.5 rounded-lg font-semibold text-sm bg-white text-slate-600 border border-slate-300 hover:bg-slate-100 transition">İdefix</button>
+            <button onclick="pazarSec('Beymen')" id="btn-Beymen" class="px-5 py-2.5 rounded-lg font-semibold text-sm bg-white text-slate-600 border border-slate-300 hover:bg-slate-100 transition">Beymen</button>
+            <button onclick="pazarSec('Pazarama')" id="btn-Pazarama" class="px-5 py-2.5 rounded-lg font-semibold text-sm bg-white text-slate-600 border border-slate-300 hover:bg-slate-100 transition">Pazarama</button>
+        </div>
+
+        <!-- Dosya Yükleme Alanı -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div>
+                <h3 id="aktifPazarBaslik" class="text-lg font-bold text-slate-800">Trendyol Raporunu Yükle</h3>
+                <p class="text-xs text-slate-500 mt-1">Seçilen pazar yerine ait Excel raporunu seç ve analizi başlat.</p>
+                <input type="file" id="pazarFile" accept=".xlsx, .xls, .csv" class="mt-3 text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 cursor-pointer">
+            </div>
+            <button onclick="analiziBaslat()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-8 py-3 rounded-xl shadow-md transition duration-200 whitespace-nowrap">
+                🚀 Analizi Çalıştır
+            </button>
+        </div>
+
+        <!-- Sonuç Alanı -->
+        <div id="sonucAlani" class="hidden space-y-6">
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+                <h2 id="ozetBaslik" class="text-lg font-bold text-slate-800 mb-4">📊 Karşılaştırma Özeti</h2>
+                <div id="ozetIcerik" class="grid grid-cols-1 md:grid-cols-5 gap-4 text-center"></div>
+            </div>
+
+            <!-- Hatalı Ürünler Tablosu -->
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+                <h2 class="text-lg font-bold text-slate-800 mb-4">⚠️ T-Soft'a Göre Hatalı / Uyumsuz Ürünler</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm text-slate-700">
+                        <thead>
+                            <tr class="bg-slate-100 border-b border-slate-200">
+                                <th class="p-3">Eşleşme Yöntemi</th>
+                                <th class="p-3">Ürün Adı</th>
+                                <th class="p-3 text-blue-700">T-Soft (Doğru Kaynak)</th>
+                                <th class="p-3 text-slate-700">Pazar Yeri Durumu</th>
+                                <th class="p-3">Tespit Edilen Hata</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabloIcerik"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- İş Planındaki Açılacak Ürünler Tablosu -->
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+                <h2 class="text-lg font-bold text-slate-800 mb-4">🚧 İş Planında / Açılacak Ürünler</h2>
+                <p class="text-xs text-slate-500 mb-4">Pazar yerinde henüz açılmamış ancak iş planına dahil edilerek işaretlenmiş ürünler.</p>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm text-slate-700">
+                        <thead>
+                            <tr class="bg-slate-100 border-b border-slate-200">
+                                <th class="p-3">Ürün Adı</th>
+                                <th class="p-3">Kod / Barkod</th>
+                                <th class="p-3">Stok / Fiyat</th>
+                                <th class="p-3 text-center">İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody id="acilicakTabloIcerik"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Eşleşmeyen / Manuel Eşleştirme Bekleyen Ürünler -->
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+                <h2 class="text-lg font-bold text-slate-800 mb-4">🔍 Otomatik Eşleşmeyenler</h2>
+                <p class="text-xs text-slate-500 mb-4">Pazar yerinde bulamadıysan, açılır listeden <b>"🚧 [İŞ PLANINA EKLE] Açılacak Ürün"</b> seçeneğini seçip <b>Buluta Öğret / Kaydet</b> butonuna basabilirsin.</p>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm text-slate-700">
+                        <thead>
+                            <tr class="bg-slate-100 border-b border-slate-200">
+                                <th class="p-3">T-Soft Ürün Adı / Kodu</th>
+                                <th class="p-3">T-Soft Stok / Fiyat</th>
+                                <th class="p-3">İşlem / Pazar Yeri Eşleşmesi</th>
+                                <th class="p-3 text-center">İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody id="eslesmeyenTabloIcerik"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
         let tsoftData = [];
         let pazarVerileri = {
             'Trendyol': [], 'Hepsiburada': [], 'Amazon': [], 'N11': [], 'İdefix': [], 'Beymen': [], 'Pazarama': []
@@ -67,7 +202,7 @@
             reader.readAsArrayBuffer(file);
         });
 
-        window.pazarSec = function(pazarAdi) {
+        function pazarSec(pazarAdi) {
             aktifPazar = pazarAdi;
             const pazarListesi = ['Trendyol', 'Hepsiburada', 'Amazon', 'N11', 'İdefix', 'Beymen', 'Pazarama'];
             pazarListesi.forEach(p => {
@@ -92,29 +227,28 @@
             return "";
         }
 
-        // Tıklama olayını garanti altına alan global fonksiyon
-        window.manuelEsleKaydet = async function(tIdx) {
-            try {
-                let row = tsoftData[tIdx];
-                let tKod = String(kolonDegeriBul(row, ['web servis kodu', 'stok kodu', 'sku', 'stokkodu', 'tedarikçi stok kodu'])).trim();
-                let tBarkod = String(kolonDegeriBul(row, ['barkod', 'barcode'])).trim();
-                let tIsim = String(kolonDegeriBul(row, ['ürün adı', 'urun adi', 'title', 'product name'])).trim();
-                let tUniqueKey = tKod || tBarkod || tIsim;
+        async function manuelEsleKaydet(tIdx) {
+            let row = tsoftData[tIdx];
+            let tKod = String(kolonDegeriBul(row, ['web servis kodu', 'stok kodu', 'sku', 'stokkodu', 'tedarikçi stok kodu'])).trim();
+            let tBarkod = String(kolonDegeriBul(row, ['barkod', 'barcode'])).trim();
+            let tIsim = String(kolonDegeriBul(row, ['ürün adı', 'urun adi', 'title', 'product name'])).trim();
+            let tUniqueKey = tKod || tBarkod || tIsim;
 
-                const selectEl = document.getElementById(`select-${tIdx}`);
-                if(!selectEl || selectEl.value === "") {
-                    alert("Lütfen pazar yerinden ürün seçin veya listeden 'İş Planına Ekle' seçeneğini seçin.");
-                    return;
-                }
-                
-                const secilenDeger = selectEl.value;
+            const selectEl = document.getElementById(`select-${tIdx}`);
+            if(!selectEl || selectEl.value === "") {
+                alert("Lütfen pazar yerinden ürün seçin veya 'İş Planına Ekle' seçeneğini seçin.");
+                return;
+            }
+            
+            const secilenDeger = selectEl.value;
 
-                if (secilenDeger === "ACILACAK_URUN") {
-                    if (!acilacakUrunler[aktifPazar]) acilacakUrunler[aktifPazar] = {};
-                    acilacakUrunler[aktifPazar][tUniqueKey] = true;
-                    if (manuelEslesmeler[aktifPazar][tUniqueKey] !== undefined) delete manuelEslesmeler[aktifPazar][tUniqueKey];
+            if (secilenDeger === "ACILACAK_URUN") {
+                if (!acilacakUrunler[aktifPazar]) acilacakUrunler[aktifPazar] = {};
+                acilacakUrunler[aktifPazar][tUniqueKey] = true;
+                if (manuelEslesmeler[aktifPazar][tUniqueKey] !== undefined) delete manuelEslesmeler[aktifPazar][tUniqueKey];
 
-                    if (window.firebaseDb) {
+                if (window.firebaseDb) {
+                    try {
                         const { doc, setDoc } = window.firebaseMethods;
                         let docId = `${aktifPazar}_${tUniqueKey}`.replace(/[^a-zA-Z0-9]/g, "_");
                         await setDoc(doc(window.firebaseDb, "eslesmeler", docId), {
@@ -122,14 +256,18 @@
                             tKey: tUniqueKey,
                             type: 'acilacak'
                         });
+                    } catch (err) {
+                        console.log("Buluta kayıt hatası:", err);
                     }
-                    alert("✅ Ürün başarıyla İş Planına eklendi ve listeden çıkarıldı!");
-                } else {
-                    let secilenPazarIndex = Number(secilenDeger);
-                    manuelEslesmeler[aktifPazar][tUniqueKey] = secilenPazarIndex;
-                    if (acilacakUrunler[aktifPazar][tUniqueKey]) delete acilacakUrunler[aktifPazar][tUniqueKey];
+                }
+                alert("Ürün iş planına başarıyla eklendi! 🚧");
+            } else {
+                let secilenPazarIndex = Number(secilenDeger);
+                manuelEslesmeler[aktifPazar][tUniqueKey] = secilenPazarIndex;
+                if (acilacakUrunler[aktifPazar][tUniqueKey]) delete acilacakUrunler[aktifPazar][tUniqueKey];
 
-                    if (window.firebaseDb) {
+                if (window.firebaseDb) {
+                    try {
                         const { doc, setDoc } = window.firebaseMethods;
                         let docId = `${aktifPazar}_${tUniqueKey}`.replace(/[^a-zA-Z0-9]/g, "_");
                         await setDoc(doc(window.firebaseDb, "eslesmeler", docId), {
@@ -138,42 +276,40 @@
                             pIndex: secilenPazarIndex,
                             type: 'match'
                         });
+                    } catch (err) {
+                        console.log("Buluta kayıt hatası:", err);
                     }
-                    alert("✅ Eşleşme buluta başarıyla kaydedildi!");
                 }
-
-                // Arayüzü hemen yenile
-                window.analiziBaslat();
-            } catch (error) {
-                alert("Bir hata oluştu: " + error.message);
-                console.error(error);
+                alert("Eşleşme buluta kaydedildi! ☁️");
             }
+
+            analiziBaslat();
         }
 
-        window.acilacaktanCikar = async function(tIdx) {
-            try {
-                let row = tsoftData[tIdx];
-                let tKod = String(kolonDegeriBul(row, ['web servis kodu', 'stok kodu', 'sku', 'stokkodu', 'tedarikçi stok kodu'])).trim();
-                let tBarkod = String(kolonDegeriBul(row, ['barkod', 'barcode'])).trim();
-                let tIsim = String(kolonDegeriBul(row, ['ürün adı', 'urun adi', 'title', 'product name'])).trim();
-                let tUniqueKey = tKod || tBarkod || tIsim;
+        async function acilacaktanCikar(tIdx) {
+            let row = tsoftData[tIdx];
+            let tKod = String(kolonDegeriBul(row, ['web servis kodu', 'stok kodu', 'sku', 'stokkodu', 'tedarikçi stok kodu'])).trim();
+            let tBarkod = String(kolonDegeriBul(row, ['barkod', 'barcode'])).trim();
+            let tIsim = String(kolonDegeriBul(row, ['ürün adı', 'urun adi', 'title', 'product name'])).trim();
+            let tUniqueKey = tKod || tBarkod || tIsim;
 
-                if (acilacakUrunler[aktifPazar][tUniqueKey]) delete acilacakUrunler[aktifPazar][tUniqueKey];
+            if (acilacakUrunler[aktifPazar][tUniqueKey]) delete acilacakUrunler[aktifPazar][tUniqueKey];
 
-                if (window.firebaseDb) {
+            if (window.firebaseDb) {
+                try {
                     const { doc, deleteDoc } = window.firebaseMethods;
                     let docId = `${aktifPazar}_${tUniqueKey}`.replace(/[^a-zA-Z0-9]/g, "_");
                     await deleteDoc(doc(window.firebaseDb, "eslesmeler", docId));
+                } catch (err) {
+                    console.log("Buluttan silme hatası:", err);
                 }
-
-                alert("Ürün açılacaklar listesinden kaldırıldı.");
-                window.analiziBaslat();
-            } catch (error) {
-                console.error(error);
             }
+
+            alert("Ürün açılacaklar listesinden kaldırıldı.");
+            analiziBaslat();
         }
 
-        window.analiziBaslat = function() {
+        function analiziBaslat() {
             if(tsoftData.length === 0) {
                 alert('Lütfen önce T-Soft ana kaynak raporunu yükleyin.');
                 return;
@@ -304,7 +440,7 @@
                                 </select>
                             </td>
                             <td class="p-3 text-center">
-                                <button type="button" onclick="window.manuelEsleKaydet(${tIdx})" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded text-xs font-semibold shadow">
+                                <button type="button" onclick="manuelEsleKaydet(${tIdx})" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded text-xs font-semibold shadow">
                                     Buluta Öğret / Kaydet
                                 </button>
                             </td>
@@ -325,7 +461,7 @@
                             <td class="p-3 text-xs font-mono text-slate-500">Kod: ${item.tKod || '-'} | Barkod: ${item.tBarkod || '-'}</td>
                             <td class="p-3 text-blue-700 font-semibold">Stok: ${item.tStok} | Fiyat: ${item.tFiyat} TL</td>
                             <td class="p-3 text-center">
-                                <button type="button" onclick="window.acilacaktanCikar(${item.tIdx})" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded text-xs font-semibold shadow">
+                                <button type="button" onclick="acilacaktanCikar(${item.tIdx})" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded text-xs font-semibold shadow">
                                     Listeden Çıkar
                                 </button>
                             </td>
@@ -361,3 +497,5 @@
             `;
         }
     </script>
+</body>
+</html>
