@@ -115,7 +115,7 @@
             <!-- Eşleşmeyen / Manuel Eşleştirme Bekleyen Ürünler -->
             <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
                 <h2 class="text-lg font-bold text-slate-800 mb-4">🔍 Otomatik Eşleşmeyenler</h2>
-                <p class="text-xs text-slate-500 mb-4">Pazar yerinde bulamadıysan, açılır listeden <b>"🚧 [İŞ PLANINA EKLE] Açılacak Ürün"</b> seçeneğini seçip <b>Buluta Öğret</b> butonuna basabilirsin.</p>
+                <p class="text-xs text-slate-500 mb-4">Pazar yerinde bulamadıysan, açılır listeden <b>"🚧 [İŞ PLANINA EKLE] Açılacak Ürün"</b> seçeneğini seçip <b>Buluta Öğret / Kaydet</b> butonuna basabilirsin.</p>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse text-sm text-slate-700">
                         <thead>
@@ -242,7 +242,6 @@
             
             const secilenDeger = selectEl.value;
 
-            // Eğer kullanıcı "İş Planı" seçtiyse
             if (secilenDeger === "ACILACAK_URUN") {
                 if (!acilacakUrunler[aktifPazar]) acilacakUrunler[aktifPazar] = {};
                 acilacakUrunler[aktifPazar][tUniqueKey] = true;
@@ -263,7 +262,6 @@
                 }
                 alert("Ürün iş planına başarıyla eklendi! 🚧");
             } else {
-                // Normal eşleşme
                 let secilenPazarIndex = Number(secilenDeger);
                 manuelEslesmeler[aktifPazar][tUniqueKey] = secilenPazarIndex;
                 if (acilacakUrunler[aktifPazar][tUniqueKey]) delete acilacakUrunler[aktifPazar][tUniqueKey];
@@ -356,7 +354,6 @@
                 if(pIsim) pazarIsimMap.set(pIsim, idx);
             });
 
-            // Açılır kutunun en başına İş Planı seçeneğini ekliyoruz
             let pazarSecenekleriHTML = `<option value="">-- Pazar Yerindeki Ürünü Seç --</option>`;
             pazarSecenekleriHTML += `<option value="ACILACAK_URUN" style="font-weight:bold; color:#b45309;">🚧 [İŞ PLANINA EKLE] Açılacak Ürün</option>`;
             
@@ -476,7 +473,6 @@
                 acilicakTablo.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-500">Henüz iş planında açılacak olarak işaretlenen ürün yok.</td></tr>`;
             }
 
-            // Olay dinleyicileri
             document.querySelectorAll('.btn-ogret').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     manuelEsleKaydet(Number(e.target.getAttribute('data-idx')));
