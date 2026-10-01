@@ -36,6 +36,42 @@
 </head>
 <body class="bg-slate-50 text-slate-800 h-screen flex flex-col overflow-hidden">
 
+    <!-- GİRİŞ EKRANI (AUTH OVERLAY) -->
+    <div id="loginOverlay" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl border border-slate-100 space-y-6">
+            <div class="text-center space-y-2">
+                <div class="w-14 h-14 bg-brand-500 text-white rounded-2xl mx-auto flex items-center justify-center shadow-lg text-2xl">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <h2 class="text-xl font-bold text-slate-900">Yönetim Paneli Girişi</h2>
+                <p class="text-xs text-slate-500">Devam etmek için lütfen kurumsal e-posta ve şifrenizle giriş yapın.</p>
+            </div>
+
+            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">E-posta Adresi</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-envelope absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+                        <input type="email" id="loginEmail" required placeholder="ornek@fakir.com" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-3 py-2.5 text-xs focus:outline-none focus:border-brand-500 transition">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Şifre</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-key absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+                        <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-3 py-2.5 text-xs focus:outline-none focus:border-brand-500 transition">
+                    </div>
+                </div>
+                <div id="loginError" class="text-xs text-red-500 font-medium text-center hidden"></div>
+
+                <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white py-3 rounded-xl text-xs font-bold transition shadow-md flex items-center justify-center space-x-2">
+                    <span>Giriş Yap</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
     <!-- ÜST HEADER -->
     <header class="bg-slate-900 text-white shadow-md px-6 py-3 flex justify-between items-center z-10 flex-shrink-0">
         <div class="flex items-center space-x-3 cursor-pointer" onclick="switchGlobalTab('ops'); goHome();">
@@ -61,10 +97,10 @@
         </div>
 
         <div class="flex items-center space-x-3">
-            <!-- Ana Sayfaya Dön Butonu (Operasyon detaydayken görünür) -->
+            <!-- Ana Sayfaya Dön Butonu (Detaydayken görünür) -->
             <button id="backToHomeBtn" onclick="goHome()" class="bg-slate-800 hover:bg-slate-700 text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition shadow-sm hidden items-center space-x-2 border border-slate-700">
                 <i class="fa-solid fa-arrow-left"></i>
-                <span>Listeye Dön</span>
+                <span>Ürün Listesine Dön</span>
             </button>
             <!-- Excel Export Butonu -->
             <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition shadow-sm flex items-center space-x-2">
@@ -75,22 +111,21 @@
                 <i class="fa-solid fa-plus"></i>
                 <span>Yeni Ürün</span>
             </button>
-            <div class="flex items-center space-x-2 border-l border-slate-700 pl-3">
-                <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-brand-400 font-bold text-sm shadow-inner">
-                    61
-                </div>
-                <span class="text-xs font-medium text-slate-200 hidden sm:inline">Ekip</span>
-            </div>
+            <!-- Çıkış Yap Butonu -->
+            <button onclick="handleLogout()" class="bg-red-600/80 hover:bg-red-600 text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition shadow-sm flex items-center space-x-2 border border-red-500" title="Güvenli Çıkış Yap">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Çıkış</span>
+            </button>
         </div>
     </header>
 
     <!-- ANA İÇERİK ALANI -->
     <div class="flex flex-1 overflow-hidden relative">
 
-        <!-- 1. MODÜL: ÜRÜN OPERASYONLARI (Firebase Tabanlı Sistemimiz) -->
+        <!-- 1. MODÜL: ÜRÜN OPERASYONLARI -->
         <div id="moduleOps" class="flex-1 flex flex-col overflow-hidden relative w-full h-full">
             
-            <!-- 1.1. ANA SAYFA TABLOSU -->
+            <!-- 1.1. ANA SAYFA ÜRÜN LİSTESİ TABLOSU -->
             <div id="homeView" class="flex-1 flex flex-col overflow-hidden bg-slate-50 p-6">
                 <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6 flex-shrink-0">
                     <div>
@@ -232,36 +267,48 @@
                                 <span>1. Genel Başlangıç ve Onay Adımları</span>
                             </h3>
                             <div class="flex items-center space-x-2">
+                                <!-- İçerik Maili Butonu -->
                                 <button onclick="copyContentEmailTemplate()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition flex items-center space-x-1.5 shadow-sm">
                                     <i class="fa-solid fa-envelope text-[10px]"></i>
                                     <span>İçerik Maili</span>
                                 </button>
+                                <!-- Stok Talep Maili Butonu -->
                                 <button onclick="copyStockEmailTemplate()" class="bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition flex items-center space-x-1.5 shadow-sm">
                                     <i class="fa-solid fa-envelope-open-text text-[10px]"></i>
                                     <span>Stok Talep Maili</span>
                                 </button>
                             </div>
                         </div>
-                        <div id="topFlowContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+                        <div id="topFlowContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            <!-- Dinamik doldurulacak -->
+                        </div>
                     </div>
 
                     <!-- 2. BÖLÜM: İKİYE AYRILAN KOLLAR -->
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                        <!-- SOL KOL: T-SOFT OPERASYONLARI -->
                         <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col">
                             <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4 flex items-center space-x-2">
                                 <i class="fa-solid fa-laptop-code text-indigo-600"></i>
                                 <span>2. T-Soft Operasyon Adımları</span>
                             </h3>
-                            <div id="tsoftContainer" class="space-y-2.5 flex-1"></div>
+                            <div id="tsoftContainer" class="space-y-2.5 flex-1">
+                                <!-- Dinamik doldurulacak -->
+                            </div>
                         </div>
 
+                        <!-- SAĞ KOL: ENTEGRA & PAZARYERLERİ TAKİBİ -->
                         <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col">
                             <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4 flex items-center space-x-2">
                                 <i class="fa-solid fa-store text-amber-600"></i>
                                 <span>3. Entegra & Pazaryerleri Takibi</span>
                             </h3>
-                            <div id="marketplacesContainer" class="space-y-3 flex-1"></div>
+                            <div id="marketplacesContainer" class="space-y-3 flex-1">
+                                <!-- Dinamik doldurulacak -->
+                            </div>
                         </div>
+
                     </div>
 
                     <!-- 3. BÖLÜM: GÖZ YORMAYAN KOMPAKT AKTİVİTE GÜNLÜĞÜ -->
@@ -273,16 +320,18 @@
                             </h3>
                             <span class="text-[10px] text-slate-400">Son 5 Hareket</span>
                         </div>
-                        <div id="activityLogContainer" class="space-y-1.5"></div>
+                        <div id="activityLogContainer" class="space-y-1.5">
+                            <!-- Dinamik loglar -->
+                        </div>
                     </div>
 
                 </div>
             </div>
         </div>
 
-        <!-- 2. MODÜL: PAZARYERİ EŞLEŞTİRME (Gömülü Link / IFrame) -->
-        <div id="moduleMatch" class="flex-1 flex flex-col overflow-hidden hidden w-full h-full bg-slate-100">
-            <iframe src="https://fakir-pazaryeri-eslestirme.vercel.app/" class="w-full h-full border-0"></iframe>
+        <!-- 2. MODÜL: PAZARYERİ EŞLEŞTİRME -->
+        <div id="moduleMatch" class="flex-1 flex flex-col overflow-hidden hidden w-full h-full bg-slate-100 relative">
+            <iframe id="matchIframe" src="https://fakir-pazaryeri-eslestirme.vercel.app/" class="w-full h-full border-0"></iframe>
         </div>
 
     </div>
@@ -357,6 +406,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBFMgKub8q5NzBaay4PVFq1M8nnq5Obno0",
@@ -370,6 +420,7 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
 
         const topFlowSteps = [
             "Yeni Ürün Bilgisi Geldi",
@@ -426,6 +477,39 @@
         window.selectProduct = selectProduct;
         window.goHome = goHome;
         window.switchGlobalTab = switchGlobalTab;
+        window.handleLogin = handleLogin;
+        window.handleLogout = handleLogout;
+
+        // Oturum Durumu Kontrolü (Giriş yapılmadıysa overlay gösterilir)
+        onAuthStateChanged(auth, (user) => {
+            const overlay = document.getElementById('loginOverlay');
+            if (user) {
+                overlay.classList.add('hidden');
+            } else {
+                overlay.classList.remove('hidden');
+            }
+        });
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const errEl = document.getElementById('loginError');
+            errEl.classList.add('hidden');
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (err) {
+                errEl.textContent = "Giriş başarısız: E-posta veya şifre hatalı.";
+                errEl.classList.remove('hidden');
+            }
+        }
+
+        async function handleLogout() {
+            if (confirm("Oturumu kapatmak istediğinize emin misiniz?")) {
+                await signOut(auth);
+            }
+        }
 
         function switchGlobalTab(tabName) {
             const modOps = document.getElementById('moduleOps');
