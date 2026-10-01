@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Ticaret Operasyon ve Koordinasyon Paneli</title>
+    <title>Pazaryeri Eşleştirme Aracı</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome for Icons -->
@@ -34,908 +34,252 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 h-screen flex flex-col overflow-hidden">
+<body class="bg-slate-100 text-slate-800 h-screen flex flex-col overflow-hidden">
 
-    <!-- GİRİŞ EKRANI (AUTH OVERLAY) -->
-    <div id="loginOverlay" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center hidden">
-        <div class="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl border border-slate-100 space-y-6">
-            <div class="text-center space-y-2">
-                <div class="w-14 h-14 bg-brand-500 text-white rounded-2xl mx-auto flex items-center justify-center shadow-lg text-2xl">
-                    <i class="fa-solid fa-lock"></i>
-                </div>
-                <h2 class="text-xl font-bold text-slate-900">Yönetim Paneli Girişi</h2>
-                <p class="text-xs text-slate-500">Devam etmek için lütfen kurumsal e-posta ve şifrenizle giriş yapın.</p>
-            </div>
-
-            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">E-posta Adresi</label>
-                    <div class="relative">
-                        <i class="fa-solid fa-envelope absolute left-3.5 top-3 text-slate-400 text-xs"></i>
-                        <input type="email" id="loginEmail" required placeholder="ornek@fakir.com" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-3 py-2.5 text-xs focus:outline-none focus:border-brand-500 transition">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Şifre</label>
-                    <div class="relative">
-                        <i class="fa-solid fa-key absolute left-3.5 top-3 text-slate-400 text-xs"></i>
-                        <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-3 py-2.5 text-xs focus:outline-none focus:border-brand-500 transition">
-                    </div>
-                </div>
-                <div id="loginError" class="text-xs text-red-500 font-medium text-center hidden"></div>
-
-                <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white py-3 rounded-xl text-xs font-bold transition shadow-md flex items-center justify-center space-x-2">
-                    <span>Giriş Yap</span>
-                    <i class="fa-solid fa-arrow-right"></i>
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <!-- ÜST HEADER -->
-    <header class="bg-slate-900 text-white shadow-md px-6 py-3 flex justify-between items-center z-10 flex-shrink-0">
-        <div class="flex items-center space-x-3 cursor-pointer" onclick="switchGlobalTab('ops'); goHome();">
-            <div class="bg-brand-500 text-white p-2.5 rounded-xl shadow-lg flex items-center justify-center">
-                <i class="fa-solid fa-boxes-stacked text-xl"></i>
+    <!-- HEADER -->
+    <header class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center flex-shrink-0 shadow-sm">
+        <div class="flex items-center space-x-3">
+            <div class="bg-indigo-600 text-white p-2 rounded-xl shadow-md flex items-center justify-center">
+                <i class="fa-solid fa-link text-lg"></i>
             </div>
             <div>
-                <h1 class="text-base font-bold tracking-tight">E-Ticaret Operasyon ve Koordinasyon Paneli</h1>
-                <p class="text-[11px] text-slate-400">Canlı Ortak Çalışma & Lojistik Takvimi</p>
+                <h1 class="text-base font-bold text-slate-800">Pazaryeri Eşleştirme Aracı</h1>
+                <p class="text-[11px] text-slate-500">Ana ürün listesi ile pazaryeri (Trendyol, Hepsiburada vb.) listelerini karşılaştırın</p>
             </div>
         </div>
-
-        <!-- MODÜL GEÇİŞ SEKMELERİ -->
-        <div class="flex items-center space-x-2 bg-slate-800 p-1.5 rounded-xl border border-slate-700">
-            <button id="navBtnOps" onclick="switchGlobalTab('ops')" class="px-4 py-1.5 rounded-lg text-xs font-bold transition bg-brand-600 text-white shadow-sm flex items-center space-x-1.5">
-                <i class="fa-solid fa-clipboard-list"></i>
-                <span>Ürün Operasyonları</span>
-            </button>
-            <button id="navBtnMatch" onclick="switchGlobalTab('match')" class="px-4 py-1.5 rounded-lg text-xs font-semibold transition text-slate-300 hover:text-white flex items-center space-x-1.5">
-                <i class="fa-solid fa-link"></i>
-                <span>Pazaryeri Eşleştirme</span>
-            </button>
-        </div>
-
-        <div class="flex items-center space-x-3">
-            <!-- Ana Sayfaya Dön Butonu (Detaydayken görünür) -->
-            <button id="backToHomeBtn" onclick="goHome()" class="bg-slate-800 hover:bg-slate-700 text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition shadow-sm hidden items-center space-x-2 border border-slate-700">
-                <i class="fa-solid fa-arrow-left"></i>
-                <span>Ürün Listesine Dön</span>
-            </button>
-            <!-- Excel Export Butonu -->
-            <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition shadow-sm flex items-center space-x-2">
-                <i class="fa-solid fa-file-excel"></i>
-                <span>Excel'e Aktar</span>
-            </button>
-            <button onclick="openNewProductModal()" class="bg-brand-600 hover:bg-brand-700 text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition shadow-sm flex items-center space-x-2">
-                <i class="fa-solid fa-plus"></i>
-                <span>Yeni Ürün</span>
-            </button>
-            <!-- Çıkış Yap Butonu -->
-            <button onclick="handleLogout()" class="bg-red-600/80 hover:bg-red-600 text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition shadow-sm flex items-center space-x-2 border border-red-500" title="Güvenli Çıkış Yap">
-                <i class="fa-solid fa-right-from-bracket"></i>
-                <span>Çıkış</span>
-            </button>
-        </div>
+        <button onclick="clearAll()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-2">
+            <i class="fa-solid fa-broom"></i>
+            <span>Tümünü Temizle</span>
+        </button>
     </header>
 
-    <!-- ANA İÇERİK ALANI -->
-    <div class="flex flex-1 overflow-hidden relative">
+    <!-- ANA İÇERİK -->
+    <div class="flex flex-1 overflow-hidden p-6 gap-6 flex-col lg:flex-row">
+        
+        <!-- SOL: GİRİŞ ALANLARI -->
+        <div class="w-full lg:w-1/3 flex flex-col gap-4 flex-shrink-0">
+            <!-- Liste 1: Ana Liste -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex-1 flex flex-col">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center space-x-2">
+                        <i class="fa-solid fa-database text-brand-600"></i>
+                        <span>Ana Ürün Listesi (SKU)</span>
+                    </label>
+                    <span id="count1" class="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md font-bold">0 Satır</span>
+                </div>
+                <p class="text-[10px] text-slate-400 mb-2">T-Soft, SAP veya Entegra'dan kopyaladığınız SKU listesini buraya yapıştırın.</p>
+                <textarea id="list1" oninput="updateCounts()" class="w-full flex-1 bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs focus:outline-none focus:border-brand-500 transition custom-scrollbar resize-none" placeholder="Örn:&#10;41005899&#10;41005901&#10;41005904"></textarea>
+            </div>
 
-        <!-- 1. MODÜL: ÜRÜN OPERASYONLARI -->
-        <div id="moduleOps" class="flex-1 flex flex-col overflow-hidden relative w-full h-full">
+            <!-- Liste 2: Pazaryeri Listesi -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex-1 flex flex-col">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center space-x-2">
+                        <i class="fa-solid fa-store text-indigo-600"></i>
+                        <span>Pazaryeri Listesi (SKU)</span>
+                    </label>
+                    <span id="count2" class="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md font-bold">0 Satır</span>
+                </div>
+                <p class="text-[10px] text-slate-400 mb-2">Pazaryerindeki (Trendyol vb.) aktif ürünlerin SKU'larını buraya yapıştırın.</p>
+                <textarea id="list2" oninput="updateCounts()" class="w-full flex-1 bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs focus:outline-none focus:border-indigo-500 transition custom-scrollbar resize-none" placeholder="Örn:&#10;41005899&#10;41005904"></textarea>
+            </div>
+
+            <button onclick="compareLists()" class="bg-slate-900 hover:bg-slate-800 text-white w-full py-3 rounded-xl text-sm font-bold transition shadow-md flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-code-compare"></i>
+                <span>Listeleri Karşılaştır</span>
+            </button>
+        </div>
+
+        <!-- SAĞ: SONUÇLAR -->
+        <div class="w-full lg:w-2/3 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden relative">
             
-            <!-- 1.1. ANA SAYFA ÜRÜN LİSTESİ TABLOSU -->
-            <div id="homeView" class="flex-1 flex flex-col overflow-hidden bg-slate-50 p-6">
-                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6 flex-shrink-0">
-                    <div>
-                        <h2 class="text-lg font-bold text-slate-800">Ürün Operasyon Takip Listesi</h2>
-                        <p class="text-xs text-slate-500">Tüm ürünlerin genel durumunu, tarihlerini ve pazaryeri durumlarını buradan takip edebilirsiniz.</p>
-                    </div>
-                    <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-                        <!-- Pazaryeri / Durum Filtreleme Açılır Menüsü -->
-                        <div class="relative">
-                            <select id="filterSelect" onchange="filterHomeTable()" class="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 focus:outline-none focus:border-brand-500 transition shadow-sm cursor-pointer">
-                                <option value="all">Tüm Ürünler</option>
-                                <option value="missing_trendyol">Trendyol'da Açık Olmayanlar</option>
-                                <option value="missing_hepsiburada">Hepsiburada'da Açık Olmayanlar</option>
-                                <option value="missing_amazon">Amazon'da Açık Olmayanlar</option>
-                                <option value="missing_n11">N11'de Açık Olmayanlar</option>
-                                <option value="missing_beymen">Beymen'de Açık Olmayanlar</option>
-                                <option value="missing_idefix">İdefix'te Açık Olmayanlar</option>
-                                <option value="missing_pazarama">Pazarama'da Açık Olmayanlar</option>
-                                <option value="incomplete">Tamamlanmamış Ürünler (%100 Altı)</option>
-                            </select>
-                        </div>
-
-                        <!-- Arama Çubuğu -->
-                        <div class="relative flex-1 sm:w-64">
-                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
-                            <input type="text" id="homeSearchInput" oninput="filterHomeTable()" placeholder="Ürün adı veya kod ile ara..." class="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs focus:outline-none focus:border-brand-500 transition shadow-sm">
-                        </div>
-                        <span id="tableProductCount" class="bg-slate-200 text-slate-700 text-xs px-3 py-2 rounded-xl font-bold flex-shrink-0">0 Ürün</span>
-                    </div>
-                </div>
-
-                <!-- Tablo Alanı -->
-                <div class="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-                    <div class="flex-1 overflow-auto custom-scrollbar">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="bg-slate-100/70 border-b border-slate-200 text-[11px] font-bold text-slate-600 uppercase tracking-wider sticky top-0 z-10">
-                                    <th class="p-4">Ürün Kodu (SKU)</th>
-                                    <th class="p-4">Ürün Adı</th>
-                                    <th class="p-4">Kategori</th>
-                                    <th class="p-4">Talep Edilen Stok</th>
-                                    <th class="p-4">Gümrük Geçiş</th>
-                                    <th class="p-4">Depoya Giriş</th>
-                                    <th class="p-4">Tamamlanma</th>
-                                    <th class="p-4 text-center">İşlem</th>
-                                </tr>
-                            </thead>
-                            <tbody id="productTableBody" class="divide-y divide-slate-100 text-xs">
-                                <!-- Dinamik Tablo Satırları -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 1.2. TEKİL ÜRÜN DETAY EKRANI -->
-            <div id="productDetailView" class="flex-1 flex flex-col overflow-hidden bg-slate-50/50 hidden">
-                <!-- Ürün Başlık ve İlerleme Özeti -->
-                <div class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between flex-shrink-0">
-                    <div>
-                        <div class="flex items-center space-x-2 mb-1">
-                            <span id="detailProductSku" class="bg-brand-50 text-brand-700 text-xs font-bold px-2.5 py-0.5 rounded-md border border-brand-100">SKU</span>
-                            <span id="detailProductCat" class="text-xs font-medium text-slate-400">Kategori</span>
-                        </div>
-                        <h2 id="detailProductName" class="text-xl font-bold text-slate-900">Ürün Adı</h2>
-                    </div>
-                    <div class="flex items-center space-x-6">
-                        <div class="text-right">
-                            <div class="text-xs text-slate-400 font-medium mb-1">Genel Tamamlanma</div>
-                            <div class="flex items-center space-x-3">
-                                <div class="w-32 bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                                    <div id="detailProgressBar" class="bg-brand-500 h-full transition-all duration-300 rounded-full" style="width: 0%"></div>
-                                </div>
-                                <span id="detailProgressText" class="text-sm font-bold text-slate-700">%0</span>
-                            </div>
-                        </div>
-                        <button onclick="deleteCurrentProduct()" class="text-slate-400 hover:text-red-500 p-2 rounded-xl hover:bg-red-50 transition text-sm border-l border-slate-200 pl-4" title="Ürünü Sil">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Kaydırma Alanı -->
-                <div class="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6">
-
-                    <!-- LOJİSTİK & GÜMRÜK TAKVİMİ KARTI -->
-                    <div class="bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl p-5 text-white shadow-lg space-y-4">
-                        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-                            <div>
-                                <h3 class="text-xs font-bold uppercase tracking-wider text-brand-400 mb-1 flex items-center space-x-2">
-                                    <i class="fa-solid fa-calendar-days"></i>
-                                    <span>Lojistik & Gümrük Takvimi</span>
-                                </h3>
-                                <p class="text-xs text-slate-300">Gümrük geçiş tarihi, talep edilen stok miktarı ve kritik sevkiyat aşamaları.</p>
-                            </div>
-                            <button onclick="openLogisticsModal()" class="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow flex items-center space-x-2">
-                                <i class="fa-solid fa-pen-to-square"></i>
-                                <span>Tarih & Stok Bilgilerini Güncelle</span>
-                            </button>
-                        </div>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
-                            <div class="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700">
-                                <div class="text-[10px] text-slate-400 font-semibold uppercase">Talep Edilen Stok</div>
-                                <div id="statStockQty" class="text-lg font-bold text-brand-400 mt-1">Belirtilmedi</div>
-                            </div>
-                            <div class="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700">
-                                <div class="text-[10px] text-slate-400 font-semibold uppercase">Gümrükten Geçiş Tarihi</div>
-                                <div id="statCustomsDate" class="text-sm font-bold text-white mt-1">Girilmedi</div>
-                            </div>
-                            <div class="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700">
-                                <div class="text-[10px] text-slate-400 font-semibold uppercase">Depoya Giriş Tarihi</div>
-                                <div id="statWarehouseDate" class="text-sm font-bold text-white mt-1">Girilmedi</div>
-                            </div>
-                            <div class="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700">
-                                <div class="text-[10px] text-slate-400 font-semibold uppercase">Pazaryeri Canlı Tarihi</div>
-                                <div id="statLaunchDate" class="text-sm font-bold text-white mt-1">Girilmedi</div>
-                            </div>
-                        </div>
-
-                        <!-- OPERASYON / GECİKME NOTU ALANI -->
-                        <div class="pt-3 border-t border-slate-700">
-                            <div class="flex justify-between items-center mb-1.5">
-                                <label class="text-[11px] font-bold text-brand-400 uppercase tracking-wider flex items-center space-x-1.5">
-                                    <i class="fa-solid fa-note-sticky"></i>
-                                    <span>Operasyon / Gecikme Notu</span>
-                                </label>
-                                <span class="text-[10px] text-slate-400 italic">Otomatik Kaydedilir</span>
-                            </div>
-                            <textarea id="productNote" oninput="saveProductNote()" rows="2" placeholder="Not ekleyin..." class="w-full bg-slate-900/90 border border-slate-700 rounded-xl p-3 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-brand-500 transition resize-none"></textarea>
-                        </div>
-                    </div>
-
-                    <!-- 1. BÖLÜM: ÜST ORTAK AKIŞ -->
-                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
-                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-2">
-                                <i class="fa-solid fa-route text-brand-600"></i>
-                                <span>1. Genel Başlangıç ve Onay Adımları</span>
-                            </h3>
-                            <div class="flex items-center space-x-2">
-                                <!-- İçerik Maili Butonu -->
-                                <button onclick="copyContentEmailTemplate()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition flex items-center space-x-1.5 shadow-sm">
-                                    <i class="fa-solid fa-envelope text-[10px]"></i>
-                                    <span>İçerik Maili</span>
-                                </button>
-                                <!-- Stok Talep Maili Butonu -->
-                                <button onclick="copyStockEmailTemplate()" class="bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition flex items-center space-x-1.5 shadow-sm">
-                                    <i class="fa-solid fa-envelope-open-text text-[10px]"></i>
-                                    <span>Stok Talep Maili</span>
-                                </button>
-                            </div>
-                        </div>
-                        <div id="topFlowContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                            <!-- Dinamik doldurulacak -->
-                        </div>
-                    </div>
-
-                    <!-- 2. BÖLÜM: İKİYE AYRILAN KOLLAR -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-                        <!-- SOL KOL: T-SOFT OPERASYONLARI -->
-                        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col">
-                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4 flex items-center space-x-2">
-                                <i class="fa-solid fa-laptop-code text-indigo-600"></i>
-                                <span>2. T-Soft Operasyon Adımları</span>
-                            </h3>
-                            <div id="tsoftContainer" class="space-y-2.5 flex-1">
-                                <!-- Dinamik doldurulacak -->
-                            </div>
-                        </div>
-
-                        <!-- SAĞ KOL: ENTEGRA & PAZARYERLERİ TAKİBİ -->
-                        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col">
-                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4 flex items-center space-x-2">
-                                <i class="fa-solid fa-store text-amber-600"></i>
-                                <span>3. Entegra & Pazaryerleri Takibi</span>
-                            </h3>
-                            <div id="marketplacesContainer" class="space-y-3 flex-1">
-                                <!-- Dinamik doldurulacak -->
-                            </div>
-                        </div>
-
-                    </div>
-
-                    <!-- 3. BÖLÜM: GÖZ YORMAYAN KOMPAKT AKTİVİTE GÜNLÜĞÜ -->
-                    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
-                        <div class="flex items-center justify-between mb-3">
-                            <h3 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1.5">
-                                <i class="fa-solid fa-clock-rotate-left text-slate-500"></i>
-                                <span>Son İşlem Geçmişi (Aktivite Akışı)</span>
-                            </h3>
-                            <span class="text-[10px] text-slate-400">Son 5 Hareket</span>
-                        </div>
-                        <div id="activityLogContainer" class="space-y-1.5">
-                            <!-- Dinamik loglar -->
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-
-        <!-- 2. MODÜL: PAZARYERİ EŞLEŞTİRME -->
-        <div id="moduleMatch" class="flex-1 flex flex-col overflow-hidden hidden w-full h-full bg-slate-100 relative">
-            <iframe id="matchIframe" src="https://fakir-pazaryeri-eslestirme.vercel.app/" class="w-full h-full border-0"></iframe>
-        </div>
-
-    </div>
-
-    <!-- YENİ ÜRÜN MODALI -->
-    <div id="productModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
-        <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl border border-slate-100">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-base font-bold text-slate-800">Yeni Ürün Ekle</h3>
-                <button onclick="closeNewProductModal()" class="text-slate-400 hover:text-slate-600">
-                    <i class="fa-solid fa-xmark text-lg"></i>
+            <div class="bg-slate-50 border-b border-slate-200 p-4 flex justify-between items-center">
+                <h2 class="text-sm font-bold text-slate-800">Karşılaştırma Sonuçları</h2>
+                <button id="exportBtn" onclick="exportResultsToExcel()" class="hidden bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm items-center space-x-1.5">
+                    <i class="fa-solid fa-file-excel"></i>
+                    <span>Sonuçları Excel'e Aktar</span>
                 </button>
             </div>
-            <form id="productForm" onsubmit="handleProductSubmit(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">Ürün Adı</label>
-                    <input type="text" id="modalName" required placeholder="Örn: 61 Hobi Vion Core V-100" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-brand-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">Ürün Kodu</label>
-                    <input type="text" id="modalSku" required placeholder="Örn: 61-VION-100" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-brand-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">Kategori</label>
-                    <input type="text" id="modalCategory" required placeholder="Örn: Hobi ve Eğlence" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-brand-500">
-                </div>
-                <div class="flex justify-end space-x-3 pt-2">
-                    <button type="button" onclick="closeNewProductModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">İptal</button>
-                    <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2 rounded-xl text-xs font-semibold transition shadow-sm">Ürünü Oluştur</button>
-                </div>
-            </form>
-        </div>
-    </div>
 
-    <!-- LOJİSTİK VE TAKVİM GÜNCELLEME MODALI -->
-    <div id="logisticsModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
-        <div class="bg-white rounded-2xl w-full max-w-lg p-6 shadow-2xl border border-slate-100">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-base font-bold text-slate-800">Lojistik, Stok ve Takvim Bilgileri</h3>
-                <button onclick="closeLogisticsModal()" class="text-slate-400 hover:text-slate-600">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
+            <!-- Sonuç Tabları -->
+            <div id="resultsArea" class="flex-1 flex flex-col hidden">
+                <div class="flex border-b border-slate-200 text-xs font-bold">
+                    <button onclick="switchTab('missing')" id="tab-missing" class="flex-1 py-3 text-center border-b-2 border-red-500 text-red-600 bg-red-50/50 transition">
+                        Pazaryerinde Eksik Olanlar (<span id="resCountMissing">0</span>)
+                    </button>
+                    <button onclick="switchTab('extra')" id="tab-extra" class="flex-1 py-3 text-center border-b-2 border-transparent text-slate-500 hover:bg-slate-50 transition">
+                        Pazaryerinde Fazla Olanlar (<span id="resCountExtra">0</span>)
+                    </button>
+                    <button onclick="switchTab('match')" id="tab-match" class="flex-1 py-3 text-center border-b-2 border-transparent text-slate-500 hover:bg-slate-50 transition">
+                        Eşleşen Ürünler (<span id="resCountMatch">0</span>)
+                    </button>
+                </div>
+                
+                <div class="flex-1 overflow-auto custom-scrollbar p-4 bg-slate-50/30">
+                    <!-- Pazaryerinde Eksik -->
+                    <div id="content-missing" class="grid grid-cols-2 md:grid-cols-3 gap-2"></div>
+                    <!-- Pazaryerinde Fazla -->
+                    <div id="content-extra" class="grid grid-cols-2 md:grid-cols-3 gap-2 hidden"></div>
+                    <!-- Eşleşenler -->
+                    <div id="content-match" class="grid grid-cols-2 md:grid-cols-3 gap-2 hidden"></div>
+                </div>
             </div>
-            <form id="logisticsForm" onsubmit="handleLogisticsSubmit(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">Talep Edilen Stok Adedi</label>
-                    <input type="text" id="logStockQty" placeholder="Örn: 300" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-brand-500">
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">Gümrükten Geçiş</label>
-                        <input type="date" id="logCustomsDate" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-brand-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">Depoya Giriş</label>
-                        <input type="date" id="logWarehouseDate" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-brand-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">Pazaryeri Canlı</label>
-                        <input type="date" id="logLaunchDate" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-brand-500">
-                    </div>
-                </div>
-                <div class="flex justify-end space-x-3 pt-2">
-                    <button type="button" onclick="closeLogisticsModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">İptal</button>
-                    <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2 rounded-xl text-xs font-semibold transition shadow-sm">Bilgileri Kaydet</button>
-                </div>
-            </form>
+
+            <!-- Boş Durum -->
+            <div id="emptyState" class="flex-1 flex flex-col items-center justify-center text-slate-400 p-6 text-center">
+                <i class="fa-solid fa-boxes-packing text-4xl mb-3 text-slate-300"></i>
+                <p class="text-sm font-medium">Sonuçları görmek için listeleri doldurup "Karşılaştır" butonuna basın.</p>
+            </div>
+
         </div>
+
     </div>
 
-    <!-- FIREBASE VE UYGULAMA MANTIĞI -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
-        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+    <script>
+        let resultMissing = [];
+        let resultExtra = [];
+        let resultMatch = [];
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyBFMgKub8q5NzBaay4PVFq1M8nnq5Obno0",
-            authDomain: "fakir-ecommerce-panel.firebaseapp.com",
-            projectId: "fakir-ecommerce-panel",
-            storageBucket: "fakir-ecommerce-panel.firebasestorage.app",
-            messagingSenderId: "704123122573",
-            appId: "1:704123122573:web:2b14f47b1bbff7382bc3c4",
-            measurementId: "G-2MQ33R7DX4"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-
-        const topFlowSteps = [
-            "Yeni Ürün Bilgisi Geldi",
-            "Fiyat İstendi",
-            "S-Portal Talep Açıldı",
-            "SAP'den Ürün Açıldı",
-            "Pazarlamadan İçerik Talep Edildi",
-            "Ürün Stok Talep Maili Atıldı"
-        ];
-
-        const tsoftSteps = [
-            { name: "Ürün görselleri boyutlandırıldı", tool: null },
-            { name: "Teknik özellik girildi", tool: null },
-            { name: "Ürün açıklaması girildi", tool: "Product Editör", url: "https://product-editor2.vercel.app/" },
-            { name: "Kullanım kılavuzu eklendi", tool: null },
-            { name: "Sıkça sorulan sorular eklendi", tool: "SSS Editör", url: "https://sss-nine-coral.vercel.app/" },
-            { name: "Ürün videoları eklendi", tool: null },
-            { name: "Ürün AI Uzmanı eklendi", tool: null },
-            { name: "Kategori seçildi", tool: null },
-            { name: "Yayın durumu aktif edildi", tool: null },
-            { name: "KDV dahil göster aktif edildi", tool: null },
-            { name: "Liste aktif edildi", tool: null }
-        ];
-
-        const marketplaces = [
-            { name: "Trendyol", icon: "fa-bag-shopping", color: "text-orange-500" },
-            { name: "Hepsiburada", icon: "fa-store", color: "text-amber-500" },
-            { name: "Amazon", icon: "fa-amazon", color: "text-yellow-600" },
-            { name: "N11", icon: "fa-shop", color: "text-red-500" },
-            { name: "Beymen", icon: "fa-gem", color: "text-slate-800" },
-            { name: "İdefix", icon: "fa-book", color: "text-blue-600" },
-            { name: "Pazarama", icon: "fa-cart-shopping", color: "text-purple-600" }
-        ];
-
-        let products = [];
-        let currentProductId = null;
-        let noteTimeout = null;
-
-        window.filterHomeTable = filterHomeTable;
-        window.openNewProductModal = openNewProductModal;
-        window.closeNewProductModal = closeNewProductModal;
-        window.handleProductSubmit = handleProductSubmit;
-        window.openLogisticsModal = openLogisticsModal;
-        window.closeLogisticsModal = closeLogisticsModal;
-        window.handleLogisticsSubmit = handleLogisticsSubmit;
-        window.saveProductNote = saveProductNote;
-        window.deleteCurrentProduct = deleteCurrentProduct;
-        window.exportToExcel = exportToExcel;
-        window.copyContentEmailTemplate = copyContentEmailTemplate;
-        window.copyStockEmailTemplate = copyStockEmailTemplate;
-        window.toggleTopFlow = toggleTopFlow;
-        window.toggleTsoft = toggleTsoft;
-        window.toggleMarketplace = toggleMarketplace;
-        window.selectProduct = selectProduct;
-        window.goHome = goHome;
-        window.switchGlobalTab = switchGlobalTab;
-        window.handleLogin = handleLogin;
-        window.handleLogout = handleLogout;
-
-        // Oturum Durumu Kontrolü (Giriş yapılmadıysa overlay gösterilir)
-        onAuthStateChanged(auth, (user) => {
-            const overlay = document.getElementById('loginOverlay');
-            if (user) {
-                overlay.classList.add('hidden');
-            } else {
-                overlay.classList.remove('hidden');
-            }
-        });
-
-        async function handleLogin(e) {
-            e.preventDefault();
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            const errEl = document.getElementById('loginError');
-            errEl.classList.add('hidden');
-
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-            } catch (err) {
-                errEl.textContent = "Giriş başarısız: E-posta veya şifre hatalı.";
-                errEl.classList.remove('hidden');
-            }
-        }
-
-        async function handleLogout() {
-            if (confirm("Oturumu kapatmak istediğinize emin misiniz?")) {
-                await signOut(auth);
-            }
-        }
-
-        function switchGlobalTab(tabName) {
-            const modOps = document.getElementById('moduleOps');
-            const modMatch = document.getElementById('moduleMatch');
-            const btnOps = document.getElementById('navBtnOps');
-            const btnMatch = document.getElementById('navBtnMatch');
-            const backBtn = document.getElementById('backToHomeBtn');
-
-            if (tabName === 'ops') {
-                modOps.classList.remove('hidden');
-                modMatch.classList.add('hidden');
-                btnOps.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition bg-brand-600 text-white shadow-sm flex items-center space-x-1.5";
-                btnMatch.className = "px-4 py-1.5 rounded-lg text-xs font-semibold transition text-slate-300 hover:text-white flex items-center space-x-1.5";
-            } else {
-                modOps.classList.add('hidden');
-                modMatch.classList.remove('hidden');
-                btnMatch.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition bg-brand-600 text-white shadow-sm flex items-center space-x-1.5";
-                btnOps.className = "px-4 py-1.5 rounded-lg text-xs font-semibold transition text-slate-300 hover:text-white flex items-center space-x-1.5";
-                backBtn.classList.remove('flex');
-                backBtn.classList.add('hidden');
-            }
-        }
-
-        onSnapshot(collection(db, "products"), (snapshot) => {
-            products = [];
-            snapshot.forEach((docSnap) => {
-                products.push({ id: docSnap.id, ...docSnap.data() });
-            });
-
-            filterHomeTable();
-            if (currentProductId) {
-                renderProductDetails();
-            }
-        });
-
-        async function saveProductToFirestore(product, actionDesc = "") {
-            if (actionDesc) {
-                if (!product.logs) product.logs = [];
-                const now = new Date();
-                const timeStr = `${now.toLocaleDateString('tr-TR')} ${now.toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'})}`;
-                product.logs.unshift({ text: actionDesc, time: timeStr });
-                if (product.logs.length > 5) product.logs.pop();
-            }
-            await setDoc(doc(db, "products", product.id), product);
-        }
-
-        function filterHomeTable() {
-            const query = document.getElementById('homeSearchInput').value.toLowerCase();
-            const filterType = document.getElementById('filterSelect').value;
-            const tableBody = document.getElementById('productTableBody');
-            tableBody.innerHTML = "";
+        function updateCounts() {
+            const list1 = document.getElementById('list1').value.split('\n').filter(r => r.trim() !== '');
+            const list2 = document.getElementById('list2').value.split('\n').filter(r => r.trim() !== '');
             
-            const filtered = products.filter(p => {
-                const matchesQuery = p.name.toLowerCase().includes(query) || p.sku.toLowerCase().includes(query);
-                if (!matchesQuery) return false;
+            document.getElementById('count1').textContent = `${list1.length} Satır`;
+            document.getElementById('count2').textContent = `${list2.length} Satır`;
+        }
 
-                if (filterType === 'all') return true;
-                if (filterType === 'incomplete') return calculateProgress(p) < 100;
+        function compareLists() {
+            // Verileri alıp temizle (boşlukları sil, küçük harfe çevirip eşitlemek için standartlaştır)
+            const raw1 = document.getElementById('list1').value.split('\n').map(s => s.trim()).filter(s => s !== '');
+            const raw2 = document.getElementById('list2').value.split('\n').map(s => s.trim()).filter(s => s !== '');
 
-                const mIndexMap = {
-                    'missing_trendyol': 0,
-                    'missing_hepsiburada': 1,
-                    'missing_amazon': 2,
-                    'missing_n11': 3,
-                    'missing_beymen': 4,
-                    'missing_idefix': 5,
-                    'missing_pazarama': 6
-                };
-
-                if (filterType in mIndexMap) {
-                    const idx = mIndexMap[filterType];
-                    const isOpen = p.marketplaces && p.marketplaces[idx];
-                    return !isOpen;
-                }
-
-                return true;
-            });
-
-            document.getElementById('tableProductCount').textContent = `${filtered.length} Ürün`;
-
-            if (filtered.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="8" class="text-center py-12 text-slate-400">Filtreye uygun ürün bulunamadı.</td></tr>`;
+            if (raw1.length === 0 && raw2.length === 0) {
+                alert("Lütfen karşılaştırmak için en az bir liste girin.");
                 return;
             }
 
-            filtered.forEach(p => {
-                const progress = calculateProgress(p);
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50/80 transition cursor-pointer border-b border-slate-100";
-                tr.onclick = () => selectProduct(p.id);
+            // Set kullanarak benzersiz elemanları ve performanslı aramayı sağla (Büyük/küçük harf duyarsız)
+            const set1 = new Set(raw1.map(item => item.toUpperCase()));
+            const set2 = new Set(raw2.map(item => item.toUpperCase()));
 
-                tr.innerHTML = `
-                    <td class="p-4 font-bold text-slate-700">
-                        <span class="bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-md text-[11px]">${p.sku}</span>
-                    </td>
-                    <td class="p-4 font-bold text-slate-900">${p.name}</td>
-                    <td class="p-4 text-slate-500">${p.category}</td>
-                    <td class="p-4 font-semibold text-brand-700">${p.logistics?.stockQty || "-"}</td>
-                    <td class="p-4 text-slate-600">${p.logistics?.customsDate ? formatDate(p.logistics.customsDate) : "<span class='text-slate-300'>Girilmedi</span>"}</td>
-                    <td class="p-4 text-slate-600">${p.logistics?.warehouseDate ? formatDate(p.logistics.warehouseDate) : "<span class='text-slate-300'>Girilmedi</span>"}</td>
-                    <td class="p-4">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-24 bg-slate-100 h-2 rounded-full overflow-hidden">
-                                <div class="bg-brand-500 h-full rounded-full" style="width: ${progress}%"></div>
-                            </div>
-                            <span class="font-bold text-slate-700 text-[11px]">%${progress}</span>
-                        </div>
-                    </td>
-                    <td class="p-4 text-center">
-                        <button onclick="event.stopPropagation(); selectProduct('${p.id}')" class="bg-slate-900 hover:bg-brand-600 text-white px-3 py-1.5 rounded-lg text-[11px] font-bold transition shadow-sm">
-                            İncele <i class="fa-solid fa-arrow-right ml-1"></i>
-                        </button>
-                    </td>
-                `;
-                tableBody.appendChild(tr);
-            });
-        }
+            // Orijinal hallerini korumak için map oluşturalım
+            const map1 = {}; raw1.forEach(item => map1[item.toUpperCase()] = item);
+            const map2 = {}; raw2.forEach(item => map2[item.toUpperCase()] = item);
 
-        function calculateProgress(p) {
-            let total = topFlowSteps.length + tsoftSteps.length + marketplaces.length;
-            let completed = 0;
+            resultMissing = [];
+            resultExtra = [];
+            resultMatch = [];
 
-            topFlowSteps.forEach((_, idx) => { if (p.topFlow && p.topFlow[idx]) completed++; });
-            tsoftSteps.forEach((_, idx) => { if (p.tsoft && p.tsoft[idx]) completed++; });
-            marketplaces.forEach((_, idx) => { if (p.marketplaces && p.marketplaces[idx]) completed++; });
-
-            return Math.round((completed / total) * 100);
-        }
-
-        function selectProduct(id) {
-            currentProductId = id;
-            document.getElementById('homeView').classList.add('hidden');
-            document.getElementById('productDetailView').classList.remove('hidden');
-            document.getElementById('backToHomeBtn').classList.remove('hidden');
-            document.getElementById('backToHomeBtn').classList.add('flex');
-            renderProductDetails();
-        }
-
-        function goHome() {
-            currentProductId = null;
-            document.getElementById('productDetailView').classList.add('hidden');
-            document.getElementById('homeView').classList.remove('hidden');
-            document.getElementById('backToHomeBtn').classList.remove('flex');
-            document.getElementById('backToHomeBtn').classList.add('hidden');
-            filterHomeTable();
-        }
-
-        function renderProductDetails() {
-            const p = products.find(x => x.id === currentProductId);
-            if (!p) return;
-
-            document.getElementById('detailProductName').textContent = p.name;
-            document.getElementById('detailProductSku').textContent = p.sku;
-            document.getElementById('detailProductCat').textContent = p.category;
-
-            document.getElementById('statStockQty').textContent = p.logistics?.stockQty || "Belirtilmedi";
-            document.getElementById('statCustomsDate').textContent = p.logistics?.customsDate ? formatDate(p.logistics.customsDate) : "Girilmedi";
-            document.getElementById('statWarehouseDate').textContent = p.logistics?.warehouseDate ? formatDate(p.logistics.warehouseDate) : "Girilmedi";
-            document.getElementById('statLaunchDate').textContent = p.logistics?.launchDate ? formatDate(p.logistics.launchDate) : "Girilmedi";
-            
-            const noteEl = document.getElementById('productNote');
-            if (document.activeElement !== noteEl) {
-                noteEl.value = p.logistics?.note || "";
-            }
-
-            const progress = calculateProgress(p);
-            document.getElementById('detailProgressBar').style.width = `${progress}%`;
-            document.getElementById('detailProgressText').textContent = `%${progress}`;
-
-            const topContainer = document.getElementById('topFlowContainer');
-            topContainer.innerHTML = "";
-            topFlowSteps.forEach((step, idx) => {
-                const checked = p.topFlow && p.topFlow[idx] ? true : false;
-                const el = document.createElement('label');
-                el.className = `flex items-center space-x-3 p-3 rounded-xl border transition cursor-pointer ${checked ? 'bg-brand-50/60 border-brand-200 text-brand-900' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100/70'}`;
-                el.innerHTML = `
-                    <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleTopFlow(${idx})" class="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500">
-                    <span class="text-xs font-semibold">${step}</span>
-                `;
-                topContainer.appendChild(el);
-            });
-
-            const tsoftContainer = document.getElementById('tsoftContainer');
-            tsoftContainer.innerHTML = "";
-            tsoftSteps.forEach((stepObj, idx) => {
-                const checked = p.tsoft && p.tsoft[idx] ? true : false;
-                const el = document.createElement('div');
-                el.className = `flex items-center justify-between p-3 rounded-xl border transition ${checked ? 'bg-indigo-50/60 border-indigo-200 text-indigo-900' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100/70'}`;
-                
-                let toolButtonHtml = '';
-                if (stepObj.tool) {
-                    toolButtonHtml = `
-                        <a href="${stepObj.url}" target="_blank" onclick="event.stopPropagation()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg transition flex items-center space-x-1 shadow-sm">
-                            <i class="fa-solid fa-external-link-alt text-[9px]"></i>
-                            <span>${stepObj.tool}</span>
-                        </a>
-                    `;
+            // Ana listede olup Pazaryerinde OLMAYANLAR (Eksikler)
+            set1.forEach(item => {
+                if (!set2.has(item)) {
+                    resultMissing.push(map1[item]);
+                } else {
+                    resultMatch.push(map1[item]); // İkisinde de olanlar
                 }
-
-                el.innerHTML = `
-                    <label class="flex items-center space-x-3 flex-1 cursor-pointer">
-                        <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleTsoft(${idx})" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
-                        <span class="text-xs font-semibold">${stepObj.name}</span>
-                    </label>
-                    ${toolButtonHtml}
-                `;
-                tsoftContainer.appendChild(el);
             });
 
-            const marketContainer = document.getElementById('marketplacesContainer');
-            marketContainer.innerHTML = "";
-            marketplaces.forEach((m, idx) => {
-                const checked = p.marketplaces && p.marketplaces[idx] ? true : false;
-                const el = document.createElement('div');
-                el.className = `flex items-center justify-between p-3 rounded-xl border transition cursor-pointer ${checked ? 'bg-amber-50/60 border-amber-200' : 'bg-slate-50 border-slate-200 hover:bg-slate-100/70'}`;
-                el.onclick = (e) => {
-                    if(e.target.tagName !== 'INPUT') {
-                        const checkbox = el.querySelector('input');
-                        checkbox.checked = !checkbox.checked;
-                        toggleMarketplace(idx);
-                    }
-                };
-                el.innerHTML = `
-                    <div class="flex items-center space-x-3">
-                        <i class="fa-solid ${m.icon} ${m.color} text-base w-5 text-center"></i>
-                        <span class="text-xs font-bold text-slate-800">${m.name} Açıldı mı?</span>
-                    </div>
-                    <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleMarketplace(${idx})" class="w-4 h-4 text-amber-600 rounded border-slate-300 focus:ring-amber-500">
-                `;
-                marketContainer.appendChild(el);
+            // Pazaryerinde olup Ana listede OLMAYANLAR (Fazlalar - Yanlış SKU olabilir)
+            set2.forEach(item => {
+                if (!set1.has(item)) {
+                    resultExtra.push(map2[item]);
+                }
             });
 
-            const logContainer = document.getElementById('activityLogContainer');
-            logContainer.innerHTML = "";
-            if (!p.logs || p.logs.length === 0) {
-                logContainer.innerHTML = `<div class="text-[11px] text-slate-400 italic py-1">Henüz bir işlem kaydedilmedi.</div>`;
-            } else {
-                p.logs.forEach(log => {
-                    const logItem = document.createElement('div');
-                    logItem.className = "flex items-center justify-between text-[11px] bg-slate-50 border border-slate-100 px-3 py-2 rounded-xl text-slate-600";
-                    logItem.innerHTML = `
-                        <span class="font-medium">${log.text}</span>
-                        <span class="text-[10px] text-slate-400">${log.time}</span>
-                    `;
-                    logContainer.appendChild(logItem);
-                });
+            // UI Güncelleme
+            document.getElementById('resCountMissing').textContent = resultMissing.length;
+            document.getElementById('resCountExtra').textContent = resultExtra.length;
+            document.getElementById('resCountMatch').textContent = resultMatch.length;
+
+            renderList('content-missing', resultMissing, 'text-red-700 bg-red-100 border-red-200', 'fa-circle-xmark');
+            renderList('content-extra', resultExtra, 'text-amber-700 bg-amber-100 border-amber-200', 'fa-circle-exclamation');
+            renderList('content-match', resultMatch, 'text-emerald-700 bg-emerald-100 border-emerald-200', 'fa-circle-check');
+
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('resultsArea').classList.remove('hidden');
+            document.getElementById('resultsArea').classList.add('flex');
+            
+            document.getElementById('exportBtn').classList.remove('hidden');
+            document.getElementById('exportBtn').classList.add('flex');
+
+            switchTab('missing');
+        }
+
+        function renderList(containerId, dataArray, colorClasses, iconClass) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            if (dataArray.length === 0) {
+                container.innerHTML = `<div class="col-span-full text-center py-8 text-slate-400 text-xs italic">Bu listede kayıt bulunmamaktadır.</div>`;
+                return;
             }
-        }
 
-        function formatDate(dateStr) {
-            const parts = dateStr.split('-');
-            if(parts.length === 3) return `${parts[2]}.${parts[1]}.${parts[0]}`;
-            return dateStr;
-        }
-
-        function toggleTopFlow(idx) {
-            const p = products.find(x => x.id === currentProductId);
-            if (!p) return;
-            if (!p.topFlow) p.topFlow = {};
-            p.topFlow[idx] = !p.topFlow[idx];
-            const action = p.topFlow[idx] ? `"${topFlowSteps[idx]}" tamamlandı` : `"${topFlowSteps[idx]}" işareti kaldırıldı`;
-            saveProductToFirestore(p, action);
-        }
-
-        function toggleTsoft(idx) {
-            const p = products.find(x => x.id === currentProductId);
-            if (!p) return;
-            if (!p.tsoft) p.tsoft = {};
-            p.tsoft[idx] = !p.tsoft[idx];
-            const action = p.tsoft[idx] ? `[T-Soft] "${tsoftSteps[idx].name}" yapıldı` : `[T-Soft] "${tsoftSteps[idx].name}" geri alındı`;
-            saveProductToFirestore(p, action);
-        }
-
-        function toggleMarketplace(idx) {
-            const p = products.find(x => x.id === currentProductId);
-            if (!p) return;
-            if (!p.marketplaces) p.marketplaces = {};
-            p.marketplaces[idx] = !p.marketplaces[idx];
-            const action = p.marketplaces[idx] ? `[Pazaryeri] ${marketplaces[idx].name} açıldı` : `[Pazaryeri] ${marketplaces[idx].name} kapatıldı`;
-            saveProductToFirestore(p, action);
-        }
-
-        function saveProductNote() {
-            const p = products.find(x => x.id === currentProductId);
-            if (!p) return;
-            const noteText = document.getElementById('productNote').value;
-            
-            if (!p.logistics) p.logistics = {};
-            p.logistics.note = noteText;
-
-            clearTimeout(noteTimeout);
-            noteTimeout = setTimeout(() => {
-                saveProductToFirestore(p, "Operasyon notu güncellendi");
-            }, 800);
-        }
-
-        function openNewProductModal() {
-            document.getElementById('productModal').classList.remove('hidden');
-        }
-
-        function closeNewProductModal() {
-            document.getElementById('productModal').classList.add('hidden');
-            document.getElementById('productForm').reset();
-        }
-
-        function handleProductSubmit(e) {
-            e.preventDefault();
-            const name = document.getElementById('modalName').value;
-            const sku = document.getElementById('modalSku').value;
-            const category = document.getElementById('modalCategory').value;
-
-            const nowStr = `${new Date().toLocaleDateString('tr-TR')} ${new Date().toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'})}`;
-            const newProduct = {
-                id: 'prod_' + Date.now(),
-                name,
-                sku,
-                category,
-                topFlow: {},
-                tsoft: {},
-                marketplaces: {},
-                logistics: { stockQty: "", customsDate: "", warehouseDate: "", launchDate: "", note: "" },
-                logs: [{ text: "Ürün sisteme eklendi", time: nowStr }]
-            };
-
-            saveProductToFirestore(newProduct);
-            closeNewProductModal();
-            selectProduct(newProduct.id);
-        }
-
-        function openLogisticsModal() {
-            const p = products.find(x => x.id === currentProductId);
-            if (!p) return;
-            
-            document.getElementById('logStockQty').value = p.logistics?.stockQty || "";
-            document.getElementById('logCustomsDate').value = p.logistics?.customsDate || "";
-            document.getElementById('logWarehouseDate').value = p.logistics?.warehouseDate || "";
-            document.getElementById('logLaunchDate').value = p.logistics?.launchDate || "";
-
-            document.getElementById('logisticsModal').classList.remove('hidden');
-        }
-
-        function closeLogisticsModal() {
-            document.getElementById('logisticsModal').classList.add('hidden');
-        }
-
-        async function handleLogisticsSubmit(e) {
-            e.preventDefault();
-            const p = products.find(x => x.id === currentProductId);
-            if (!p) return;
-
-            if (!p.logistics) p.logistics = {};
-            p.logistics.stockQty = document.getElementById('logStockQty').value;
-            p.logistics.customsDate = document.getElementById('logCustomsDate').value;
-            p.logistics.warehouseDate = document.getElementById('logWarehouseDate').value;
-            p.logistics.launchDate = document.getElementById('logLaunchDate').value;
-
-            await saveProductToFirestore(p, "Lojistik & takvim güncellendi");
-            closeLogisticsModal();
-            renderProductDetails();
-        }
-
-        async function deleteCurrentProduct() {
-            if (!confirm("Bu ürünü silmek istediğinize emin misiniz?")) return;
-            await deleteDoc(doc(db, "products", currentProductId));
-            goHome();
-        }
-
-        function copyContentEmailTemplate() {
-            const p = products.find(x => x.id === currentProductId);
-            if (!p) return;
-            const text = `Halil Bey merhaba,\n\nYeni ürünümüz olan ${p.name} web sitemizde satışa açacağız.\n\nBu ürünlerin ürün kartlarında kullanılacak içeriklere dair taleplerimizi ekte iletiyorum.\n\nİçeriklerin hazırlanması ile ilgili desteğinizi rica ederim.\n\nİyi çalışmalar,`;
-            navigator.clipboard.writeText(text).then(() => {
-                alert("İçerik talep maili panoya kopyalandı!");
+            dataArray.forEach(item => {
+                const div = document.createElement('div');
+                div.className = `flex items-center space-x-2 px-3 py-2 rounded-lg border text-[11px] font-bold ${colorClasses} shadow-sm`;
+                div.innerHTML = `<i class="fa-solid ${iconClass} opacity-70"></i> <span class="truncate" title="${item}">${item}</span>`;
+                container.appendChild(div);
             });
         }
 
-        function copyStockEmailTemplate() {
-            const p = products.find(x => x.id === currentProductId);
-            if (!p) return;
-            const stockQty = p.logistics?.stockQty || "Belirtilmedi";
-            const text = `Emre Bey merhaba,\n\nAşağıdaki stokların f029 deposuna virman yapılmasını rica ederim.\n\nSKU: ${p.sku}\tÜrün Adı: ${p.name}\tTalep Adedi: ${stockQty}\n\nİyi çalışmalar,`;
-            navigator.clipboard.writeText(text).then(() => {
-                alert("Stok talep maili (f029 virman) panoya kopyalandı!");
+        function switchTab(tabName) {
+            const tabs = ['missing', 'extra', 'match'];
+            
+            tabs.forEach(t => {
+                const tabBtn = document.getElementById(`tab-${t}`);
+                const content = document.getElementById(`content-${t}`);
+                
+                if(t === tabName) {
+                    content.classList.remove('hidden');
+                    
+                    if(t === 'missing') tabBtn.className = "flex-1 py-3 text-center border-b-2 border-red-500 text-red-600 bg-red-50/50 font-bold transition";
+                    if(t === 'extra') tabBtn.className = "flex-1 py-3 text-center border-b-2 border-amber-500 text-amber-600 bg-amber-50/50 font-bold transition";
+                    if(t === 'match') tabBtn.className = "flex-1 py-3 text-center border-b-2 border-emerald-500 text-emerald-600 bg-emerald-50/50 font-bold transition";
+                } else {
+                    content.classList.add('hidden');
+                    tabBtn.className = "flex-1 py-3 text-center border-b-2 border-transparent text-slate-500 hover:bg-slate-50 font-semibold transition";
+                }
             });
+        }
+
+        function clearAll() {
+            document.getElementById('list1').value = '';
+            document.getElementById('list2').value = '';
+            updateCounts();
+            
+            document.getElementById('emptyState').classList.remove('hidden');
+            document.getElementById('resultsArea').classList.add('hidden');
+            document.getElementById('resultsArea').classList.remove('flex');
+            
+            document.getElementById('exportBtn').classList.add('hidden');
+            document.getElementById('exportBtn').classList.remove('flex');
+            
+            resultMissing = []; resultExtra = []; resultMatch = [];
         }
 
         function exportToExcel() {
-            if (products.length === 0) {
-                alert("Dışa aktarılacak ürün bulunmuyor!");
-                return;
+            exportResultsToExcel();
+        }
+
+        function exportResultsToExcel() {
+            let csvContent = "\uFEFF"; // Türkçe karakter desteği
+            csvContent += "Pazaryerinde Eksik Olanlar (Açılması Gerekenler);Pazaryerinde Fazla Olanlar (Yanlış SKU/Kapanacaklar);Eşleşen Ürünler\n";
+
+            const maxLength = Math.max(resultMissing.length, resultExtra.length, resultMatch.length);
+
+            for (let i = 0; i < maxLength; i++) {
+                const missingItem = resultMissing[i] ? `"${resultMissing[i].replace(/"/g, '""')}"` : "";
+                const extraItem = resultExtra[i] ? `"${resultExtra[i].replace(/"/g, '""')}"` : "";
+                const matchItem = resultMatch[i] ? `"${resultMatch[i].replace(/"/g, '""')}"` : "";
+
+                csvContent += `${missingItem};${extraItem};${matchItem}\n`;
             }
-
-            let csvContent = "\uFEFF"; 
-            let headers = ["Ürün Adı", "Ürün Kodu", "Kategori", "Talep Edilen Stok", "Gümrükten Geçiş", "Depoya Giriş", "Pazaryeri Canlı", "Operasyon / Gecikme Notu", "Genel Tamamlanma"];
-            topFlowSteps.forEach(s => headers.push(s));
-            tsoftSteps.forEach(s => headers.push(s.name));
-            marketplaces.forEach(m => headers.push(`${m.name} Açıldı mı?`));
-
-            csvContent += headers.join(";") + "\n";
-
-            products.forEach(p => {
-                const progress = calculateProgress(p);
-                let row = [
-                    `"${p.name.replace(/"/g, '""')}"`,
-                    `"${p.sku.replace(/"/g, '""')}"`,
-                    `"${p.category.replace(/"/g, '""')}"`,
-                    `"${p.logistics?.stockQty || ""}"`,
-                    `"${p.logistics?.customsDate || ""}"`,
-                    `"${p.logistics?.warehouseDate || ""}"`,
-                    `"${p.logistics?.launchDate || ""}"`,
-                    `"${(p.logistics?.note || "").replace(/"/g, '""')}"`,
-                    `"%${progress}"`
-                ];
-
-                topFlowSteps.forEach((_, idx) => { row.push(p.topFlow && p.topFlow[idx] ? "Evet" : "Hayır"); });
-                tsoftSteps.forEach((_, idx) => { row.push(p.tsoft && p.tsoft[idx] ? "Evet" : "Hayır"); });
-                marketplaces.forEach((_, idx) => { row.push(p.marketplaces && p.marketplaces[idx] ? "Evet" : "Hayır"); });
-
-                csvContent += row.join(";") + "\n";
-            });
 
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.setAttribute("href", url);
-            link.setAttribute("download", "e-ticaret_lojistik_ve_operasyon_raporu.csv");
+            link.setAttribute("download", "pazaryeri_eslestirme_sonuclari.csv");
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
