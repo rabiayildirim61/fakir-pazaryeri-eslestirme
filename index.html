@@ -1,70 +1,75 @@
 <!DOCTYPE html>
 <html lang="tr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 <title>Pazaryeri Eşleştirme</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f5f6f4;--card:#fff;--tx:#1d2420;--mu:#68736c;--ln:#dde2de;--ac:#1f6f5c;--acb:#e1f0eb;--wa:#b4590f;--wab:#fbeedd}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141a17;--card:#1c2420;--tx:#e6ece8;--mu:#93a19a;--ln:#2d3833;--ac:#5cc4a8;--acb:#1d3a32;--wa:#f0a566;--wab:#3b2a18}}
-:root[data-theme="dark"]{--bg:#141a17;--card:#1c2420;--tx:#e6ece8;--mu:#93a19a;--ln:#2d3833;--ac:#5cc4a8;--acb:#1d3a32;--wa:#f0a566;--wab:#3b2a18}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#eef0f7;--card:#fff;--tx:#181b34;--mu:#636a8a;--ln:#e2e5f1;--ac:#4f46e5;--onac:#fff;--acb:#e8e7fd;--wa:#c2410c;--wab:#ffedd5;--hero:#1b1e3f;--sh:0 1px 2px rgba(24,27,52,.05),0 6px 18px rgba(24,27,52,.06)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1224;--card:#181c36;--tx:#e8eaf8;--mu:#9aa0c4;--ln:#2a2f55;--ac:#8b86ff;--onac:#0f1224;--acb:#262a58;--wa:#fdba74;--wab:#3a2a1a;--hero:#181c36;--sh:none}}
+:root[data-theme="dark"]{--bg:#0f1224;--card:#181c36;--tx:#e8eaf8;--mu:#9aa0c4;--ln:#2a2f55;--ac:#8b86ff;--onac:#0f1224;--acb:#262a58;--wa:#fdba74;--wab:#3a2a1a;--hero:#181c36;--sh:none}
 *,*:before,*:after{box-sizing:inherit}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
-body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
-main{max-width:1100px;margin:0 auto;padding:16px}
-h1{font-size:22px;margin:0 0 4px}.sub{color:var(--mu);margin:0 0 16px}
-.box{background:var(--card);border:1px solid var(--ln);border-radius:8px;padding:14px;margin-bottom:14px}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 "Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
+.hero{background:var(--hero);color:#fff;padding:30px 20px 64px}.hero div{max-width:1100px;margin:0 auto}
+.hero h1{font-size:30px;line-height:1.15;margin:0 0 6px;font-weight:800;letter-spacing:-.02em}.hero p{margin:0;color:#b9bde0;max-width:60ch}
+main{max-width:1100px;margin:-40px auto 0;padding:0 16px 40px}
+.box{background:var(--card);border-radius:16px;padding:18px;margin-bottom:16px;box-shadow:var(--sh);border:1px solid var(--ln)}
 .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-button,select,input[type=text]{font:inherit;color:var(--tx);background:var(--card);border:1px solid var(--ln);border-radius:6px;padding:7px 10px}
-button{cursor:pointer}button.p{background:var(--ac);border-color:var(--ac);color:var(--bg);font-weight:600}
-button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--ac);outline-offset:1px}
-.f{display:inline-block}.f input{display:none}.f span{display:inline-block;border:1px dashed var(--ac);color:var(--ac);border-radius:6px;padding:7px 12px;cursor:pointer;font-weight:600}
-.st{color:var(--mu);font-size:13px}.ok{color:var(--ac)}
-.tabs{display:flex;gap:4px;border-bottom:1px solid var(--ln);margin-bottom:12px;flex-wrap:wrap}
-.tabs button{border:0;border-bottom:3px solid transparent;border-radius:0;background:none;padding:9px 14px;font-weight:600;color:var(--mu)}
-.tabs button.on{color:var(--ac);border-bottom-color:var(--ac)}
-.sc{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:14px}
-th,td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--ln);vertical-align:top}th{color:var(--mu);font-weight:600;white-space:nowrap}
-.d{background:var(--wab);color:var(--wa);border-radius:4px;padding:1px 5px}
-.tg{display:inline-block;background:var(--acb);color:var(--ac);border-radius:10px;padding:1px 8px;font-size:12px}
-.card{background:var(--card);border:1px solid var(--ln);border-radius:8px;padding:12px;margin-bottom:10px}
-.card b{display:block}.mt{color:var(--mu);font-size:13px;margin:2px 0 8px}
+button,select,input[type=text]{font:inherit;color:var(--tx);background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:8px 12px}
+button{cursor:pointer;font-weight:600}button:hover{border-color:var(--ac)}
+button.p{background:var(--ac);border-color:var(--ac);color:var(--onac)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.f{display:inline-block}.f input{display:none}.f span{display:inline-block;background:var(--acb);color:var(--ac);border-radius:10px;padding:9px 14px;cursor:pointer;font-weight:700}
+.f span:hover{filter:brightness(.96)}
+.st{color:var(--mu);font-size:13px}.ok{color:var(--ac);font-weight:700}
+.sum{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 12px}
+.sm{flex:0 0 auto;text-align:left;border-radius:14px;padding:10px 14px;background:var(--card);box-shadow:var(--sh);min-width:150px}
+.sm.on{border-color:var(--ac);box-shadow:0 0 0 2px var(--ac)}.sm b{display:block;font-size:13px}.sm span{font-size:13px;color:var(--mu);font-weight:500}.sm em{font-style:normal;color:var(--wa);font-weight:700}
+.mpc{display:inline-flex;align-items:center;gap:6px;font-weight:700}.mpc i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.tabs{display:inline-flex;gap:4px;background:var(--card);border:1px solid var(--ln);border-radius:12px;padding:4px;margin-bottom:14px;flex-wrap:wrap}
+.tabs button{border:0;background:none;border-radius:9px;padding:8px 14px;color:var(--mu)}
+.tabs button.on{background:var(--ac);color:var(--onac)}
+.sc{overflow-x:auto;background:var(--card);border:1px solid var(--ln);border-radius:14px;box-shadow:var(--sh)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--ln);vertical-align:top}
+th{color:var(--mu);font-weight:700;white-space:nowrap;font-size:13px;background:var(--bg)}tr:last-child td{border-bottom:0}
+.d{background:var(--wab);color:var(--wa);border-radius:6px;padding:1px 6px;font-weight:700}
+.tg{display:inline-block;background:var(--acb);color:var(--ac);border-radius:10px;padding:1px 9px;font-size:12px;font-weight:700}
+.card{background:var(--card);border:1px solid var(--ln);border-left:5px solid var(--c,var(--ac));border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:var(--sh)}
+.card b{display:block;font-size:15px}.mt{color:var(--mu);font-size:13px;margin:4px 0 10px}
 .ed{position:relative;flex:1 1 260px}.ed input{width:100%}
-.sg{position:absolute;left:0;right:0;top:100%;z-index:5;background:var(--card);border:1px solid var(--ln);border-radius:6px;max-height:240px;overflow:auto}
-.sg div{padding:7px 10px;cursor:pointer;border-bottom:1px solid var(--ln);font-size:13px}.sg div:hover{background:var(--acb)}
-h3{margin:16px 0 6px;font-size:16px}.em{padding:30px;text-align:center;color:var(--mu)}
-</style></head><body><main>
-<h1>Pazaryeri eşleştirme</h1>
-<p class="sub">T-Soft listesini ve pazaryeri raporlarını yükle; barkodla otomatik eşleştirsin, kalanları sen bağla.</p>
+.sg{position:absolute;left:0;right:0;top:100%;z-index:5;background:var(--card);border:1px solid var(--ln);border-radius:10px;max-height:240px;overflow:auto;box-shadow:0 10px 30px rgba(24,27,52,.18);margin-top:4px}
+.sg div{padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--ln);font-size:13px}.sg div:hover{background:var(--acb)}
+h3{margin:18px 0 8px;font-size:16px}.em{padding:36px;text-align:center;color:var(--mu);background:var(--card);border:1px dashed var(--ln);border-radius:14px}
+[hidden]{display:none!important}.mtabs{display:flex;flex-wrap:nowrap;overflow-x:auto;max-width:100%}.mtabs button{white-space:nowrap}.bd{background:var(--wab);color:var(--wa);border-radius:9px;padding:0 7px;font-size:12px;margin-left:4px}.mtabs button.on .bd{background:rgba(255,255,255,.25);color:inherit}</style></head><body><header class="hero"><div><h1>Pazaryeri eşleştirme</h1><p>T-Soft listesini ve pazaryeri raporlarını yükle; barkodla otomatik eşleştirsin, kalanları sen bağla.</p></div></header>
+<main>
 
 <div class="box">
 <div class="row">
-<label class="f"><input type="file" id="fts" accept=".xlsx,.xls,.csv"><span>1. T-Soft ürün listesi</span></label>
+<label class="f"><input type="file" id="fts" accept=".xlsx,.xls,.csv"><span>T-Soft ürün listesi (ana veri)</span></label>
 <span class="st" id="sts">Yüklenmedi</span>
 </div>
 <div class="row" style="margin-top:10px">
-<select id="mps"><option>Trendyol</option><option>Hepsiburada</option><option>N11</option></select>
-<label class="f"><input type="file" id="fmp" accept=".xlsx,.xls,.csv"><span>2. Pazaryeri raporu</span></label>
-<span class="st" id="stm">Yüklenmedi</span>
-</div>
-<div class="row" id="cm" style="margin-top:10px"></div>
-<div class="row" style="margin-top:10px">
 <button id="ex">Eşleştirmeleri indir (JSON)</button>
+<button id="exa">Tüm fiyat/stok farklarını indir</button>
 <label class="f"><input type="file" id="im" accept=".json"><span style="border-style:solid">Eşleştirmeleri içe aktar</span></label>
 <span class="st">Manuel eşleştirmeler bu tarayıcıda saklanır; yedek için indir.</span>
 </div>
 </div>
 
-<div class="row" style="margin-bottom:8px">
-<select id="fl"></select>
-<input type="text" id="q" placeholder="Ara: ad, barkod, kod" style="flex:1 1 220px">
-<label class="st"><input type="checkbox" id="df"> Sadece fiyat/stok farkı olanlar</label>
+<div class="tabs mtabs" id="mt"></div>
+<div class="box" id="mph">
+<div class="row"><label class="f"><input type="file" id="fmp" accept=".xlsx,.xls,.csv"><span id="fmpl">Rapor yükle</span></label><span class="st" id="stm">Yüklenmedi</span></div>
+<div class="row" id="cm" style="margin-top:10px"></div>
 </div>
+<div class="row" style="margin-bottom:12px"><input type="text" id="q" placeholder="Ara: ad, barkod, kod" style="flex:1 1 220px"><label class="st" id="dfl"><input type="checkbox" id="df"> Sadece fiyat/stok farkı olanlar</label><button id="exd" class="p" hidden>Farkları indir</button></div>
 <div class="tabs" id="tabs"></div>
 <div id="view"></div>
 </main>
 <script>
-const MPS=['Trendyol','Hepsiburada','N11'],TAGS=['Ürün Açılacak','Fiyat Kontrol Edilecek','Stok Güncellenecek','İncelenecek'];
-let ts=[],tsB={},tsS={},rep={},tab='m',flt='Hepsi',q='';
+const MPS=['Trendyol','Hepsiburada','N11','Beymen','İdefix','Pazarama','Amazon'],MC={Trendyol:'#f97316',Hepsiburada:'#e11d48',N11:'#7c3aed',Beymen:'#334155',İdefix:'#0ea5e9',Pazarama:'#10b981',Amazon:'#f59e0b'},chip=m=>'<span class="mpc"><i style="background:'+MC[m]+'"></i>'+m+'</span>',TAGS=['Ürün Açılacak','Fiyat Kontrol Edilecek','Stok Güncellenecek','İncelenecek'];
+let ts=[],tsB={},tsS={},rep={},tab='m',cur='Trendyol',q='';
 const ld=k=>{try{return JSON.parse(localStorage.getItem(k))||{}}catch(e){return{}}};
 const sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 let maps=ld('tm_maps'),tags=ld('tm_tags');
@@ -76,49 +81,54 @@ const BC=v=>typeof v==='number'?String(Math.round(v)):S(v).replace(/\s/g,'').rep
 const NUM=v=>{if(v===''||v==null)return null;if(typeof v==='number')return v;let s=String(v).trim();if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');const n=parseFloat(s);return isNaN(n)?null:n};
 function find(h,c){const n=h.map(norm);for(const x of c){const i=n.indexOf(x);if(i>=0)return h[i]}for(const x of c){const i=n.findIndex(v=>v.includes(x));if(i>=0)return h[i]}return null}
 const F=[['code','SKU / stok kodu'],['barcode','Barkod'],['name','Ürün adı'],['price','Fiyat'],['stock','Stok']];
-function detect(h,mp){return{code:find(h,mp==='Hepsiburada'?['sku','hepsiburadasku','saticistokkodu','stokkodu']:['webserviskodu','tedarikcistokkodu','saticistokkodu','stokkodu','sku']),
+function detect(h,mp){return{code:find(h,mp==='Hepsiburada'?['sku','hepsiburadasku','saticistokkodu','stokkodu']:['webserviskodu','tedarikcistokkodu','saticistokkodu','sellersku','stokkodu','sku']),
  barcode:find(h,['barkod','barcode']),
- price:find(h,['trendyoldasatilacakfiyatkdvdahil','n11satisfiyatikdvdahil','kdvdahilfiyat','satilacakfiyat','satisfiyati','fiyat']),
- stock:find(h,['urunstokadedi','stokadedi','satilabilirstok','stok','miktar']),
- name:find(h,['urunadi','urunismi','urunad','baslik','adi'])}}
+ price:find(h,['trendyoldasatilacakfiyatkdvdahil','n11satisfiyatikdvdahil','beymensatisfiyati','kdvdahilfiyat','satilacakfiyat','satisfiyati','fiyat','price']),
+ stock:find(h,['urunstokadedi','stokadedi','satilabilirstok','stok','miktar','quantity']),
+ name:find(h,['urunadi','urunismi','urunad','baslik','itemname','adi'])}}
 function parse(rows,c){const g=(r,k)=>k?r[k]:'';return rows.map(r=>({code:S(g(r,c.code)),bcs:BL(g(r,c.barcode)),barcode:BL(g(r,c.barcode)).join(' / '),price:NUM(g(r,c.price)),stock:NUM(g(r,c.stock)),name:S(g(r,c.name))})).filter(x=>x.code||x.barcode)}
 function pickSheet(wb){let best=null,bs=-1;for(const n of wb.SheetNames){const r=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:''});const h=(r[0]||[]).map(norm);const sc=(h.some(x=>x.includes('barkod')||x.includes('barcode'))?1e6:0)+r.length;if(sc>bs){bs=sc;best=wb.Sheets[n]}}return best}
 const BL=v=>typeof v==='number'?[String(Math.round(v))]:S(v).split(/[;,\s]+/).map(x=>x.replace(/\.0+$/,'')).filter(Boolean);
 function readFile(f,cb){const r=new FileReader();r.onload=e=>{try{const wb=XLSX.read(e.target.result,{type:'array'});cb(XLSX.utils.sheet_to_json(pickSheet(wb),{defval:'',raw:true}))}catch(x){alert('Dosya okunamadı: '+x.message)}};r.readAsArrayBuffer(f)}
 $('fts').onchange=e=>{const f=e.target.files[0];if(!f)return;readFile(f,rows=>{const l=parse(rows,detect(rows[0]?Object.keys(rows[0]):[],'ts'));ts=l;tsB={};tsS={};l.forEach(t=>{t.k=norm(t.name+t.code+t.barcode);(t.bcs||[]).forEach(b=>tsB[b]=t);if(t.code)tsS[t.code]=t});
  const nb=l.filter(t=>t.barcode).length;$('sts').innerHTML='<span class="ok">'+l.length+' ürün</span>, '+nb+' barkodlu';render()})};
-$('fmp').onchange=e=>{const f=e.target.files[0];if(!f)return;const mp=$('mps').value;readFile(f,rows=>{raw[mp]=rows;repar(mp);render()});e.target.value=''};
+$('fmp').onchange=e=>{const f=e.target.files[0];if(!f)return;const mp=cur;if(mp==='plan')return;readFile(f,rows=>{raw[mp]=rows;repar(mp);render()});e.target.value=''};
 let raw={},sel={},scol=ld('tm_cols'),df=false;
 const kof=(mp,r)=>mp==='Hepsiburada'?(r.code||r.barcode):(r.barcode||r.code);
 function repar(mp){const rows=raw[mp]||[];if(!rows.length)return;const h=Object.keys(rows[0]),c=detect(h,mp),sc=scol[mp]||{};F.forEach(([k])=>{if(sc[k]&&h.includes(sc[k]))c[k]=sc[k]});sel[mp]=c;rep[mp]=parse(rows,c);cm()}
-function cm(){const mp=$('mps').value,rows=raw[mp];if(!rows||!rows.length){$('cm').innerHTML='';$('stm').textContent='Yüklenmedi';return}
+function cm(){const mp=cur,rows=raw[mp];if(!rows||!rows.length){$('cm').innerHTML='';$('stm').textContent='Yüklenmedi';return}
  const h=Object.keys(rows[0]);$('stm').innerHTML='<span class="ok">'+mp+': '+(rep[mp]||[]).length+' ürün</span>';
  $('cm').innerHTML=F.map(([k,l])=>'<label class="st">'+l+' <select class="cs" data-k="'+k+'"><option value="">-</option>'+h.map(x=>'<option'+(sel[mp][k]===x?' selected':'')+'>'+esc(x)+'</option>').join('')+'</select></label>').join('')}
 const hasDiff=x=>(x.r.price!=null&&x.t.price!=null&&x.r.price!==x.t.price)||(x.r.stock!=null&&x.t.stock!=null&&x.r.stock!==x.t.stock);
 function calc(mp){const o={m:[],u:[]};(rep[mp]||[]).forEach(r=>{const key=kof(mp,r);let t=null,how='Barkod';for(const b of r.bcs){if(tsB[b]){t=tsB[b];break}}
  if(!t){const sku=(maps[mp]||{})[key];if(sku){t=tsB[sku]||tsS[sku]||{code:sku,barcode:sku,name:'(T-Soft listesinde yok)',price:null,stock:null};how='Manuel'}}
+ if(!t&&r.code&&tsS[r.code]){t=tsS[r.code];how='Stok kodu'}
  t?o.m.push({mp,r,t,how,key}):o.u.push({mp,r,key})});return o}
 const match=x=>!q||norm(x.r.name+x.r.barcode+x.r.code+(x.t?x.t.code:'')).includes(norm(q));
 const fm=n=>n==null?'-':n.toLocaleString('tr-TR');
 function dc(a,b){return a!=null&&b!=null&&a!==b?' class="d"':''}
 function render(){
- const mps=MPS.filter(m=>rep[m]&&(flt==='Hepsi'||flt===m));
- let M=[],U=[];mps.forEach(m=>{const o=calc(m);M=M.concat(o.m);U=U.concat(o.u)});
- const T=[];Object.keys(tags).forEach(m=>{if(flt!=='Hepsi'&&flt!==m)return;Object.keys(tags[m]).forEach(k=>{const r=(rep[m]||[]).find(x=>kof(m,x)===k)||{name:'',barcode:k,code:''};T.push({mp:m,key:k,r,tag:tags[m][k]})})});
+ const plan=cur==='plan',has=!!rep[cur];
+ const o=!plan&&has?calc(cur):{m:[],u:[]},M=o.m,U=o.u;
+ const T=[];Object.keys(tags).forEach(m=>{Object.keys(tags[m]).forEach(k=>{const r=(rep[m]||[]).find(x=>kof(m,x)===k)||{name:'',barcode:k,code:''};T.push({mp:m,key:k,r,tag:tags[m][k]})})});
+ $('mt').innerHTML=MPS.map(m=>'<button data-m="'+m+'" class="'+(cur===m?'on':'')+'">'+chip(m)+(rep[m]?' <span class="bd">'+calc(m).u.length+'</span>':'')+'</button>').join('')+'<button data-m="plan" class="'+(plan?'on':'')+'">İş planı <span class="bd">'+T.length+'</span></button>';
+ $('mph').hidden=plan;$('tabs').hidden=plan||!has;$('dfl').hidden=plan||tab!=='m';
+ $('fmpl').textContent=(has?'Raporu yenile: ':'Rapor yükle: ')+cur;
+ $('exd').hidden=plan||!has;$('exd').textContent='Farkları indir ('+M.filter(hasDiff).length+')';
  const Mf=M.filter(match).filter(x=>!df||hasDiff(x)),Uf=U.filter(match),Tf=T.filter(match);
- $('tabs').innerHTML=[['m','Eşleşenler',M.length],['u','Eşleşme bekleyenler',U.length],['p','İş planı & etiketler',T.length]].map(a=>'<button data-t="'+a[0]+'" class="'+(tab===a[0]?'on':'')+'">'+a[1]+' ('+a[2]+')</button>').join('');
+ $('tabs').innerHTML=[['m','Eşleşenler',M.length],['u','Eşleşme bekleyenler',U.length]].map(a=>'<button data-t="'+a[0]+'" class="'+(tab===a[0]?'on':'')+'">'+a[1]+' ('+a[2]+')</button>').join('');
  const lim=200;let h='';
- if(!mps.length&&tab!=='p')h='<div class="em">Önce T-Soft listesini ve bir pazaryeri raporu yükle.</div>';
- else if(tab==='m'){
+ if(!plan&&!has)h='<div class="em">'+cur+' raporunu yükle'+(ts.length?'':' (önce T-Soft listesini yükle)')+'.</div>';
+ else if(!plan&&tab==='m'){
   h=Mf.length?'<div class="sc"><table><tr><th>Pazaryeri</th><th>Ürün</th><th>Barkod</th><th>T-Soft (kod / barkod)</th><th>Eşleşme</th><th>Fiyat (PY / T-Soft)</th><th>Stok (PY / T-Soft)</th></tr>'+Mf.slice(0,lim).map(x=>
-  '<tr><td>'+x.mp+'</td><td>'+esc(x.r.name||x.t.name)+'<div class="st">'+esc(x.r.code)+'</div></td><td>'+esc(x.r.barcode)+'</td><td>'+esc(x.t.code)+'<div class="st">'+esc(x.t.barcode)+'</div></td><td>'+x.how+(x.how==='Manuel'?' <button class="rm" data-mp="'+x.mp+'" data-k="'+esc(x.key)+'">Kaldır</button>':'')+'</td><td><span'+dc(x.r.price,x.t.price)+'>'+fm(x.r.price)+' / '+fm(x.t.price)+'</span></td><td><span'+dc(x.r.stock,x.t.stock)+'>'+fm(x.r.stock)+' / '+fm(x.t.stock)+'</span></td></tr>').join('')+'</table></div>':'<div class="em">Eşleşen ürün yok.</div>';
+  '<tr><td>'+chip(x.mp)+'</td><td>'+esc(x.r.name||x.t.name)+'<div class="st">'+esc(x.r.code)+'</div></td><td>'+esc(x.r.barcode)+'</td><td>'+esc(x.t.code)+'<div class="st">'+esc(x.t.barcode)+'</div></td><td>'+x.how+(x.how==='Manuel'?' <button class="rm" data-mp="'+x.mp+'" data-k="'+esc(x.key)+'">Kaldır</button>':'')+'</td><td><span'+dc(x.r.price,x.t.price)+'>'+fm(x.r.price)+' / '+fm(x.t.price)+'</span></td><td><span'+dc(x.r.stock,x.t.stock)+'>'+fm(x.r.stock)+' / '+fm(x.t.stock)+'</span></td></tr>').join('')+'</table></div>':'<div class="em">Eşleşen ürün yok.</div>';
   if(Mf.length>lim)h+='<p class="st">İlk '+lim+' satır gösteriliyor; aramayı daralt.</p>';
- }else if(tab==='u'){
-  h=Uf.length?Uf.slice(0,lim).map(x=>{const cur=(tags[x.mp]||{})[x.key]||'';return '<div class="card"><b>'+esc(x.r.name||'(adsız)')+'</b><div class="mt">'+x.mp+' · Barkod: '+esc(x.r.barcode||'-')+' · Kod: '+esc(x.r.code||'-')+' · Fiyat '+fm(x.r.price)+' · Stok '+fm(x.r.stock)+'</div><div class="row"><div class="ed"><input type="text" class="sk" data-mp="'+x.mp+'" data-k="'+esc(x.key)+'" placeholder="T-Soft ürününü ara veya barkod yaz"><div class="sg" hidden></div></div><button class="p sb">Eşleştir</button><select class="tgs" data-mp="'+x.mp+'" data-k="'+esc(x.key)+'"><option value="">Etiket yok</option>'+TAGS.map(t=>'<option'+(cur===t?' selected':'')+'>'+t+'</option>').join('')+'</select></div></div>'}).join(''):'<div class="em">Eşleşme bekleyen ürün yok.</div>';
+ }else if(!plan&&tab==='u'){
+  h=Uf.length?Uf.slice(0,lim).map(x=>{const cur=(tags[x.mp]||{})[x.key]||'';return '<div class="card" style="--c:'+MC[x.mp]+'"><b>'+esc(x.r.name||'(adsız)')+'</b><div class="mt">'+chip(x.mp)+' &nbsp;Barkod: '+esc(x.r.barcode||'-')+' · Kod: '+esc(x.r.code||'-')+' · Fiyat '+fm(x.r.price)+' · Stok '+fm(x.r.stock)+'</div><div class="row"><div class="ed"><input type="text" class="sk" data-mp="'+x.mp+'" data-k="'+esc(x.key)+'" placeholder="T-Soft ürününü ara veya barkod yaz"><div class="sg" hidden></div></div><button class="p sb">Eşleştir</button><select class="tgs" data-mp="'+x.mp+'" data-k="'+esc(x.key)+'"><option value="">Etiket yok</option>'+TAGS.map(t=>'<option'+(cur===t?' selected':'')+'>'+t+'</option>').join('')+'</select></div></div>'}).join(''):'<div class="em">Eşleşme bekleyen ürün yok.</div>';
   if(Uf.length>lim)h+='<p class="st">İlk '+lim+' ürün gösteriliyor; aramayı daralt.</p>';
  }else{
   h='<div class="row" style="margin-bottom:8px"><button id="ec">İş planını indir (CSV)</button></div>';
-  h+=Tf.length?TAGS.map(t=>{const l=Tf.filter(x=>x.tag===t);return l.length?'<h3>'+t+' <span class="tg">'+l.length+'</span></h3><div class="sc"><table><tr><th>Pazaryeri</th><th>Ürün</th><th>Barkod / kod</th></tr>'+l.map(x=>'<tr><td>'+x.mp+'</td><td>'+esc(x.r.name)+'</td><td>'+esc(x.key)+'</td></tr>').join('')+'</table></div>':''}).join(''):'<div class="em">Etiketlenmiş ürün yok. "Eşleşme bekleyenler" sekmesinden etiket seç.</div>';
+  h+=Tf.length?TAGS.map(t=>{const l=Tf.filter(x=>x.tag===t);return l.length?'<h3>'+t+' <span class="tg">'+l.length+'</span></h3><div class="sc"><table><tr><th>Pazaryeri</th><th>Ürün</th><th>Barkod / kod</th></tr>'+l.map(x=>'<tr><td>'+chip(x.mp)+'</td><td>'+esc(x.r.name)+'</td><td>'+esc(x.key)+'</td></tr>').join('')+'</table></div>':''}).join(''):'<div class="em">Etiketlenmiş ürün yok. "Eşleşme bekleyenler" sekmesinden etiket seç.</div>';
  }
  const ae=document.activeElement;if(ae&&ae.classList&&ae.classList.contains('sk'))return;
  $('view').innerHTML=h;
@@ -135,12 +145,18 @@ $('view').addEventListener('click',e=>{const t=e.target;
  if(t.id==='ec'){const rows=[['Etiket','Pazaryeri','Barkod/Kod','Ürün']];Object.keys(tags).forEach(m=>Object.keys(tags[m]).forEach(k=>{const r=(rep[m]||[]).find(x=>kof(m,x)===k);rows.push([tags[m][k],m,k,r?r.name:''])}));
   dl('is-plani.csv','\ufeff'+rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(';')).join('\n'),'text/csv')}});
 $('view').addEventListener('change',e=>{const t=e.target;if(!t.classList.contains('tgs'))return;const m=t.dataset.mp,k=t.dataset.k;tags[m]=tags[m]||{};if(t.value)tags[m][k]=t.value;else delete tags[m][k];sv('tm_tags',tags);render()});
-$('cm').onchange=e=>{const k=e.target.dataset.k;if(!k)return;const mp=$('mps').value;(scol[mp]=scol[mp]||{})[k]=e.target.value;sv('tm_cols',scol);repar(mp);render()};
-$('mps').onchange=cm;$('df').onchange=e=>{df=e.target.checked;render()};
+$('cm').onchange=e=>{const k=e.target.dataset.k;if(!k)return;const mp=cur;(scol[mp]=scol[mp]||{})[k]=e.target.value;sv('tm_cols',scol);repar(mp);render()};
+$('df').onchange=e=>{df=e.target.checked;render()};
+$('mt').onclick=e=>{const b=e.target.closest('[data-m]');if(b){cur=b.dataset.m;tab='m';cm();render()}};
 $('tabs').onclick=e=>{if(e.target.dataset.t){tab=e.target.dataset.t;render()}};
 $('q').oninput=e=>{q=e.target.value;render()};
-$('fl').innerHTML=['Hepsi'].concat(MPS).map(m=>'<option>'+m+'</option>').join('');
-$('fl').onchange=e=>{flt=e.target.value;render()};
+function exDiff(list,name){
+ const d=(a,b)=>a!=null&&b!=null&&a!==b?Math.round((a-b)*100)/100:'';
+ const rows=[['Pazaryeri','Ürün adı','Pazaryeri SKU/kod','Pazaryeri barkod','T-Soft kodu','T-Soft barkod','Pazaryeri fiyat','T-Soft fiyat','Fiyat farkı','Pazaryeri stok','T-Soft stok','Stok farkı','Eşleşme']];
+ list.forEach(x=>rows.push([x.mp,x.r.name||x.t.name,x.r.code,x.r.barcode,x.t.code,x.t.barcode,x.r.price,x.t.price,d(x.r.price,x.t.price),x.r.stock,x.t.stock,d(x.r.stock,x.t.stock),x.how]));
+ const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Farklar');XLSX.writeFile(wb,name)}
+$('exd').onclick=()=>{const l=calc(cur).m.filter(hasDiff);if(!l.length){alert('Fiyat veya stok farkı olan ürün yok.');return}exDiff(l,cur+'-fiyat-stok-farklari.xlsx')};
+$('exa').onclick=()=>{let l=[];MPS.filter(m=>rep[m]).forEach(m=>{l=l.concat(calc(m).m.filter(hasDiff))});if(!l.length){alert('Fark yok ya da henüz rapor yüklenmedi.');return}exDiff(l,'tum-fiyat-stok-farklari.xlsx')};
 function dl(n,t,m){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:m}));a.download=n;a.click()}
 $('ex').onclick=()=>dl('manual_mappings.json',JSON.stringify({maps,tags},null,1),'application/json');
 $('im').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=x=>{try{const d=JSON.parse(x.target.result);[['maps',maps],['tags',tags]].forEach(([n,o])=>{Object.keys(d[n]||{}).forEach(m=>{o[m]=Object.assign(o[m]||{},d[n][m])})});sv('tm_maps',maps);sv('tm_tags',tags);render()}catch(err){alert('JSON okunamadı')}};r.readAsText(f);e.target.value=''};
