@@ -61,10 +61,10 @@
         </div>
 
         <div class="flex items-center space-x-3">
-            <!-- Ana Sayfaya Dön Butonu (Detaydayken görünür) -->
+            <!-- Ana Sayfaya Dön Butonu (Operasyon detaydayken görünür) -->
             <button id="backToHomeBtn" onclick="goHome()" class="bg-slate-800 hover:bg-slate-700 text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition shadow-sm hidden items-center space-x-2 border border-slate-700">
                 <i class="fa-solid fa-arrow-left"></i>
-                <span>Ürün Listesine Dön</span>
+                <span>Listeye Dön</span>
             </button>
             <!-- Excel Export Butonu -->
             <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition shadow-sm flex items-center space-x-2">
@@ -87,10 +87,10 @@
     <!-- ANA İÇERİK ALANI -->
     <div class="flex flex-1 overflow-hidden relative">
 
-        <!-- 1. MODÜL: ÜRÜN OPERASYONLARI -->
+        <!-- 1. MODÜL: ÜRÜN OPERASYONLARI (Firebase Tabanlı Sistemimiz) -->
         <div id="moduleOps" class="flex-1 flex flex-col overflow-hidden relative w-full h-full">
             
-            <!-- 1.1. ANA SAYFA ÜRÜN LİSTESİ TABLOSU -->
+            <!-- 1.1. ANA SAYFA TABLOSU -->
             <div id="homeView" class="flex-1 flex flex-col overflow-hidden bg-slate-50 p-6">
                 <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6 flex-shrink-0">
                     <div>
@@ -232,48 +232,36 @@
                                 <span>1. Genel Başlangıç ve Onay Adımları</span>
                             </h3>
                             <div class="flex items-center space-x-2">
-                                <!-- İçerik Maili Butonu -->
                                 <button onclick="copyContentEmailTemplate()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition flex items-center space-x-1.5 shadow-sm">
                                     <i class="fa-solid fa-envelope text-[10px]"></i>
                                     <span>İçerik Maili</span>
                                 </button>
-                                <!-- Stok Talep Maili Butonu -->
                                 <button onclick="copyStockEmailTemplate()" class="bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition flex items-center space-x-1.5 shadow-sm">
                                     <i class="fa-solid fa-envelope-open-text text-[10px]"></i>
                                     <span>Stok Talep Maili</span>
                                 </button>
                             </div>
                         </div>
-                        <div id="topFlowContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                            <!-- Dinamik doldurulacak -->
-                        </div>
+                        <div id="topFlowContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
                     </div>
 
                     <!-- 2. BÖLÜM: İKİYE AYRILAN KOLLAR -->
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-                        <!-- SOL KOL: T-SOFT OPERASYONLARI -->
                         <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col">
                             <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4 flex items-center space-x-2">
                                 <i class="fa-solid fa-laptop-code text-indigo-600"></i>
                                 <span>2. T-Soft Operasyon Adımları</span>
                             </h3>
-                            <div id="tsoftContainer" class="space-y-2.5 flex-1">
-                                <!-- Dinamik doldurulacak -->
-                            </div>
+                            <div id="tsoftContainer" class="space-y-2.5 flex-1"></div>
                         </div>
 
-                        <!-- SAĞ KOL: ENTEGRA & PAZARYERLERİ TAKİBİ -->
                         <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col">
                             <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4 flex items-center space-x-2">
                                 <i class="fa-solid fa-store text-amber-600"></i>
                                 <span>3. Entegra & Pazaryerleri Takibi</span>
                             </h3>
-                            <div id="marketplacesContainer" class="space-y-3 flex-1">
-                                <!-- Dinamik doldurulacak -->
-                            </div>
+                            <div id="marketplacesContainer" class="space-y-3 flex-1"></div>
                         </div>
-
                     </div>
 
                     <!-- 3. BÖLÜM: GÖZ YORMAYAN KOMPAKT AKTİVİTE GÜNLÜĞÜ -->
@@ -285,18 +273,16 @@
                             </h3>
                             <span class="text-[10px] text-slate-400">Son 5 Hareket</span>
                         </div>
-                        <div id="activityLogContainer" class="space-y-1.5">
-                            <!-- Dinamik loglar -->
-                        </div>
+                        <div id="activityLogContainer" class="space-y-1.5"></div>
                     </div>
 
                 </div>
             </div>
         </div>
 
-        <!-- 2. MODÜL: PAZARYERİ EŞLEŞTİRME (Gömülü Link + İş Planı Silme Desteği) -->
-        <div id="moduleMatch" class="flex-1 flex flex-col overflow-hidden hidden w-full h-full bg-slate-100 relative">
-            <iframe id="matchIframe" src="https://fakir-pazaryeri-eslestirme.vercel.app/" class="w-full h-full border-0"></iframe>
+        <!-- 2. MODÜL: PAZARYERİ EŞLEŞTİRME (Gömülü Link / IFrame) -->
+        <div id="moduleMatch" class="flex-1 flex flex-col overflow-hidden hidden w-full h-full bg-slate-100">
+            <iframe src="https://fakir-pazaryeri-eslestirme.vercel.app/" class="w-full h-full border-0"></iframe>
         </div>
 
     </div>
@@ -786,7 +772,6 @@
         }
 
         async function handleLogisticsSubmit(e) {
-            e.argv = e;
             e.preventDefault();
             const p = products.find(x => x.id === currentProductId);
             if (!p) return;
@@ -871,44 +856,6 @@
             link.click();
             document.body.removeChild(link);
         }
-
-        // Gömülü IFrame içerisindeki eşleştirme tablosuna "Sil" butonu enjekte etmek için script dinleyicisi
-        window.addEventListener('message', (event) => {
-            // İhtiyaç halinde iframe ile haberleşme için genişletilebilir
-        });
-
-        // Iframe içerisindeki tablolara müdahale edebilmek için yardımcı bir DOM gözlemcisi (Observer) ekleyelim
-        const iframeEl = document.getElementById('matchIframe');
-        iframeEl.addEventListener('load', () => {
-            try {
-                const iframeDoc = iframeEl.contentDocument || iframeEl.contentWindow.document;
-                
-                // Iframe içerisindeki stil veya ekstra DOM manipülasyonları buraya eklenebilir
-                const injectDeleteBtnToIframe = () => {
-                    const rows = iframeDoc.querySelectorAll('table tr, tbody tr');
-                    rows.forEach(row => {
-                        if (!row.querySelector('.custom-delete-btn') && row.querySelector('td')) {
-                            const actionTd = iframeDoc.createElement('td');
-                            actionTd.className = "p-2 text-center";
-                            actionTd.innerHTML = `<button class="custom-delete-btn bg-red-50 hover:bg-red-100 text-red-600 p-1.5 rounded-lg text-xs transition" title="İş Planından Sil"><i class="fa-solid fa-trash-can"></i></button>`;
-                            
-                            actionTd.querySelector('button').onclick = (e) => {
-                                e.stopPropagation();
-                                if(confirm("Bu kalemi iş planından silmek istediğinize emin misiniz?")) {
-                                    row.remove();
-                                }
-                            };
-                            row.appendChild(actionTd);
-                        }
-                    });
-                };
-
-                // Düzenli aralıklarla tabloyu kontrol et
-                setInterval(injectDeleteBtnToIframe, 1000);
-            } catch (err) {
-                console.log("Cross-origin kısıtlaması nedeniyle iframe içeriğine doğrudan müdahale edilemedi, harici butonlar kendi tarafında yönetiliyor.");
-            }
-        });
     </script>
 </body>
 </html>
