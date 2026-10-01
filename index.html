@@ -1,350 +1,148 @@
 <!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fakir - Pazaryeri Entegrasyon & Eşleştirme Editörü</title>
-    <!-- Tailwind CSS ve SheetJS (Excel okuyucu) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- Firebase SDK -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, setDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+<html lang="tr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pazaryeri Eşleştirme</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f5f6f4;--card:#fff;--tx:#1d2420;--mu:#68736c;--ln:#dde2de;--ac:#1f6f5c;--acb:#e1f0eb;--wa:#b4590f;--wab:#fbeedd}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141a17;--card:#1c2420;--tx:#e6ece8;--mu:#93a19a;--ln:#2d3833;--ac:#5cc4a8;--acb:#1d3a32;--wa:#f0a566;--wab:#3b2a18}}
+:root[data-theme="dark"]{--bg:#141a17;--card:#1c2420;--tx:#e6ece8;--mu:#93a19a;--ln:#2d3833;--ac:#5cc4a8;--acb:#1d3a32;--wa:#f0a566;--wab:#3b2a18}
+*,*:before,*:after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1100px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:0 0 4px}.sub{color:var(--mu);margin:0 0 16px}
+.box{background:var(--card);border:1px solid var(--ln);border-radius:8px;padding:14px;margin-bottom:14px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+button,select,input[type=text]{font:inherit;color:var(--tx);background:var(--card);border:1px solid var(--ln);border-radius:6px;padding:7px 10px}
+button{cursor:pointer}button.p{background:var(--ac);border-color:var(--ac);color:var(--bg);font-weight:600}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--ac);outline-offset:1px}
+.f{display:inline-block}.f input{display:none}.f span{display:inline-block;border:1px dashed var(--ac);color:var(--ac);border-radius:6px;padding:7px 12px;cursor:pointer;font-weight:600}
+.st{color:var(--mu);font-size:13px}.ok{color:var(--ac)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--ln);margin-bottom:12px;flex-wrap:wrap}
+.tabs button{border:0;border-bottom:3px solid transparent;border-radius:0;background:none;padding:9px 14px;font-weight:600;color:var(--mu)}
+.tabs button.on{color:var(--ac);border-bottom-color:var(--ac)}
+.sc{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--ln);vertical-align:top}th{color:var(--mu);font-weight:600;white-space:nowrap}
+.d{background:var(--wab);color:var(--wa);border-radius:4px;padding:1px 5px}
+.tg{display:inline-block;background:var(--acb);color:var(--ac);border-radius:10px;padding:1px 8px;font-size:12px}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:8px;padding:12px;margin-bottom:10px}
+.card b{display:block}.mt{color:var(--mu);font-size:13px;margin:2px 0 8px}
+.ed{position:relative;flex:1 1 260px}.ed input{width:100%}
+.sg{position:absolute;left:0;right:0;top:100%;z-index:5;background:var(--card);border:1px solid var(--ln);border-radius:6px;max-height:240px;overflow:auto}
+.sg div{padding:7px 10px;cursor:pointer;border-bottom:1px solid var(--ln);font-size:13px}.sg div:hover{background:var(--acb)}
+h3{margin:16px 0 6px;font-size:16px}.em{padding:30px;text-align:center;color:var(--mu)}
+</style></head><body><main>
+<h1>Pazaryeri eşleştirme</h1>
+<p class="sub">T-Soft listesini ve pazaryeri raporlarını yükle; barkodla otomatik eşleştirsin, kalanları sen bağla.</p>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDTX7Ul5CQPG1Hhe5WOJi29C7AOR4fP574",
-            authDomain: "pazaryeri-karsilastirma.firebaseapp.com",
-            projectId: "pazaryeri-karsilastirma",
-            storageBucket: "pazaryeri-karsilastirma.firebasestorage.app",
-            messagingSenderId: "632218366818",
-            appId: "1:632218366818:web:c981ad7e0bcd1bccf5323b",
-            measurementId: "G-CGRQBEL288"
-        };
+<div class="box">
+<div class="row">
+<label class="f"><input type="file" id="fts" accept=".xlsx,.xls,.csv"><span>1. T-Soft ürün listesi</span></label>
+<span class="st" id="sts">Yüklenmedi</span>
+</div>
+<div class="row" style="margin-top:10px">
+<select id="mps"><option>Trendyol</option><option>Hepsiburada</option><option>N11</option></select>
+<label class="f"><input type="file" id="fmp" accept=".xlsx,.xls,.csv"><span>2. Pazaryeri raporu</span></label>
+<span class="st" id="stm">Yüklenmedi</span>
+</div>
+<div class="row" id="cm" style="margin-top:10px"></div>
+<div class="row" style="margin-top:10px">
+<button id="ex">Eşleştirmeleri indir (JSON)</button>
+<label class="f"><input type="file" id="im" accept=".json"><span style="border-style:solid">Eşleştirmeleri içe aktar</span></label>
+<span class="st">Manuel eşleştirmeler bu tarayıcıda saklanır; yedek için indir.</span>
+</div>
+</div>
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
-        window.firebaseDb = db;
-        window.firebaseMethods = { collection, getDocs, setDoc, doc, deleteDoc };
-        window.firebaseInitialized = true;
-    </script>
-</head>
-<body class="bg-slate-50 min-h-screen p-6">
-    <div class="max-w-7xl mx-auto">
-        <!-- Başlık -->
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-6 border border-slate-200 flex justify-between items-center">
-            <div>
-                <h1 class="text-2xl font-bold text-slate-800">🛒 Fakir E-Ticaret | Pazaryeri Fiyat & Stok Uyumsuzluk Editörü</h1>
-                <p class="text-slate-600 mt-1">T-Soft ana verinizi Trendyol, Hepsiburada ve N11 excelleriyle karşılaştırın, hataları görün ve buluta kaydedin.</p>
-            </div>
-            <div id="bulutDurumGosterge" class="text-xs font-semibold px-3 py-1.5 rounded-full bg-amber-100 text-amber-800 whitespace-nowrap">
-                ⏳ Bulut Bağlantısı Bekleniyor...
-            </div>
-        </div>
-
-        <!-- T-Soft Ortak Yükleme Alanı -->
-        <div class="bg-blue-50 p-6 rounded-xl shadow-sm border border-blue-200 mb-6">
-            <label class="block text-sm font-bold text-blue-900 mb-2">⭐ 1. Adım: T-Soft Ürünleri (Ana Veri) Yükleyin</label>
-            <input type="file" id="tsoftFile" accept=".xlsx, .xls, .csv" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
-            <p id="tsoftDurum" class="text-xs text-blue-700 mt-2">Henüz T-Soft dosyası yüklenmedi.</p>
-        </div>
-
-        <!-- Pazar Yeri Sekmeleri -->
-        <div class="flex flex-wrap gap-2 mb-6 border-b border-slate-200 pb-4" id="pazarSekmeleri">
-            <button onclick="pazarSec('Trendyol')" id="btn-Trendyol" class="px-5 py-2.5 rounded-lg font-semibold text-sm bg-blue-600 text-white shadow-sm transition">Trendyol</button>
-            <button onclick="pazarSec('Hepsiburada')" id="btn-Hepsiburada" class="px-5 py-2.5 rounded-lg font-semibold text-sm bg-white text-slate-600 border border-slate-300 hover:bg-slate-100 transition">Hepsiburada</button>
-            <button onclick="pazarSec('N11')" id="btn-N11" class="px-5 py-2.5 rounded-lg font-semibold text-sm bg-white text-slate-600 border border-slate-300 hover:bg-slate-100 transition">N11</button>
-        </div>
-
-        <!-- Pazar Yeri Dosya Yükleme Alanı -->
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div>
-                <h3 id="aktifPazarBaslik" class="text-lg font-bold text-slate-800">Trendyol Raporunu Yükle</h3>
-                <p class="text-xs text-slate-500 mt-1">İlgili pazaryerine ait Excel raporunu seçin ve analizi başlatın.</p>
-                <input type="file" id="pazarFile" accept=".xlsx, .xls, .csv" class="mt-3 text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 cursor-pointer">
-            </div>
-            <button onclick="analiziBaslat()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-8 py-3 rounded-xl shadow-md transition duration-200 whitespace-nowrap">
-                🚀 Analizi Çalıştır
-            </button>
-        </div>
-
-        <!-- Sonuç Alanı -->
-        <div id="sonucAlani" class="hidden space-y-6">
-            <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
-                <h2 id="ozetBaslik" class="text-lg font-bold text-slate-800 mb-4">📊 Karşılaştırma Özeti</h2>
-                <div id="ozetIcerik" class="grid grid-cols-1 md:grid-cols-5 gap-4 text-center"></div>
-            </div>
-
-            <!-- İş Planı / Açılacak Ürünler -->
-            <div class="bg-white rounded-xl shadow-sm p-6 border border-amber-200 bg-amber-50/30">
-                <h2 class="text-lg font-bold text-slate-800 mb-4">🚧 İş Planında / Açılacak Ürünler</h2>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse text-sm text-slate-700">
-                        <thead>
-                            <tr class="bg-slate-100 border-b border-slate-200">
-                                <th class="p-3">Ürün Adı</th>
-                                <th class="p-3">Kod / Barkod</th>
-                                <th class="p-3">Stok / Fiyat</th>
-                                <th class="p-3 text-center">İşlem</th>
-                            </tr>
-                        </thead>
-                        <tbody id="acilicakTabloIcerik"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Hatalı Ürünler Tablosu -->
-            <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
-                <h2 class="text-lg font-bold text-slate-800 mb-4">⚠ T-Soft'a Göre Hatalı / Uyumsuz Ürünler</h2>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse text-sm text-slate-700">
-                        <thead>
-                            <tr class="bg-slate-100 border-b border-slate-200">
-                                <th class="p-3">Eşleşme Yöntemi</th>
-                                <th class="p-3">Ürün Adı</th>
-                                <th class="p-3 text-blue-700">T-Soft (Ana Veri)</th>
-                                <th class="p-3 text-slate-700">Pazar Yeri Durumu</th>
-                                <th class="p-3">Tespit Edilen Hata</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabloIcerik"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Otomatik Eşleşmeyenler -->
-            <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
-                <h2 class="text-lg font-bold text-slate-800 mb-4">🔍 Otomatik Eşleşmeyenler & Manuel Eşleştirme</h2>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse text-sm text-slate-700">
-                        <thead>
-                            <tr class="bg-slate-100 border-b border-slate-200">
-                                <th class="p-3">T-Soft Ürün Adı / Kodu</th>
-                                <th class="p-3">T-Soft Stok / Fiyat</th>
-                                <th class="p-3">Pazar Yeri Eşleşmesi</th>
-                                <th class="p-3 text-center">İşlem</th>
-                            </tr>
-                        </thead>
-                        <tbody id="eslesmeyenTabloIcerik"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let tsoftData = [];
-        let pazarVerileri = { 'Trendyol': [], 'Hepsiburada': [], 'N11': [] };
-        let manuelEslesmeler = { 'Trendyol': {}, 'Hepsiburada': {}, 'N11': {} };
-        let acilacakUrunler = { 'Trendyol': {}, 'Hepsiburada': {}, 'N11': {} };
-        let aktifPazar = 'Trendyol';
-
-        window.addEventListener('DOMContentLoaded', () => {
-            const kontrolInterval = setInterval(async () => {
-                if (window.firebaseDb) {
-                    clearInterval(kontrolInterval);
-                    try {
-                        const { collection, getDocs } = window.firebaseMethods;
-                        const querySnapshot = await getDocs(collection(window.firebaseDb, "eslesmeler"));
-                        querySnapshot.forEach((docSnap) => {
-                            let data = docSnap.data();
-                            if (data.pazar && data.tKey) {
-                                if (data.type === 'acilacak') {
-                                    if (!acilacakUrunler[data.pazar]) acilacakUrunler[data.pazar] = {};
-                                    acilacakUrunler[data.pazar][data.tKey] = true;
-                                } else if (data.pIndex !== undefined) {
-                                    if (!manuelEslesmeler[data.pazar]) manuelEslesmeler[data.pazar] = {};
-                                    manuelEslesmeler[data.pazar][data.tKey] = data.pIndex;
-                                }
-                            }
-                        });
-                        document.getElementById('bulutDurumGosterge').className = "text-xs font-semibold px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-800 whitespace-nowrap";
-                        document.getElementById('bulutDurumGosterge').innerText = "☁️️ Bulut Bağlantısı Aktif";
-                    } catch (err) {
-                        console.error("Bulut hatası:", err);
-                    }
-                }
-            }, 300);
-        });
-
-        document.getElementById('tsoftFile').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const data = new Uint8Array(event.target.result);
-                const workbook = XLSX.read(data, {type: 'array'});
-                tsoftData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-                document.getElementById('tsoftDurum').innerText = `✅ T-Soft yüklendi (${tsoftData.length} ürün)`;
-            };
-            reader.readAsArrayBuffer(file);
-        });
-
-        document.getElementById('pazarFile').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const data = new Uint8Array(event.target.result);
-                const workbook = XLSX.read(data, {type: 'array'});
-                let sheetName = workbook.SheetNames.includes('Listelerim') ? 'Listelerim' : workbook.SheetNames[0];
-                pazarVerileri[aktifPazar] = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
-                alert(`${aktifPazar} raporu başarıyla yüklendi! (${pazarVerileri[aktifPazar].length} ürün)`);
-            };
-            reader.readAsArrayBuffer(file);
-        });
-
-        function pazarSec(pazarAdi) {
-            aktifPazar = pazarAdi;
-            ['Trendyol', 'Hepsiburada', 'N11'].forEach(p => {
-                const btn = document.getElementById(`btn-${p}`);
-                btn.className = (p === pazarAdi) ? "px-5 py-2.5 rounded-lg font-semibold text-sm bg-blue-600 text-white shadow-sm transition" : "px-5 py-2.5 rounded-lg font-semibold text-sm bg-white text-slate-600 border border-slate-300 hover:bg-slate-100 transition";
-            });
-            document.getElementById('aktifPazarBaslik').innerText = `${pazarAdi} Raporunu Yükle`;
-            document.getElementById('pazarFile').value = "";
-            document.getElementById('sonucAlani').classList.add('hidden');
-        }
-
-        function kolonDegeriBul(row, keys) {
-            const rowKeys = Object.keys(row);
-            for (let k of keys) {
-                const foundKey = rowKeys.find(rk => rk.trim().toLowerCase() === k.toLowerCase());
-                if (foundKey !== undefined && row[foundKey] !== undefined) return row[foundKey];
-            }
-            return "";
-        }
-
-        window.manuelEsleKaydet = async function(tIdx) {
-            let row = tsoftData[tIdx];
-            let tKod = String(kolonDegeriBul(row, ['web servis kodu', 'stok kodu', 'sku', 'stokkodu'])).trim();
-            let tBarkod = String(kolonDegeriBul(row, ['barkod', 'barcode'])).trim();
-            let tIsim = String(kolonDegeriBul(row, ['ürün adı', 'urun adi', 'title'])).trim();
-            let tUniqueKey = tKod || tBarkod || tIsim;
-
-            const selectEl = document.getElementById(`select-${tIdx}`);
-            const secilenDeger = selectEl.value;
-            if (!secilenDeger) { alert("Lütfen pazar yerinden ürün seçin."); return; }
-
-            const { doc, setDoc } = window.firebaseMethods;
-            let safeKey = tUniqueKey.replace(/[^a-zA-Z0-9]/g, "_");
-            let docId = `${aktifPazar}_${safeKey}`;
-
-            if (secilenDeger === "ACILACAK_URUN") {
-                await setDoc(doc(window.firebaseDb, "eslesmeler", docId), { pazar: aktifPazar, tKey: tUniqueKey, type: 'acilacak' });
-                if (!acilacakUrunler[aktifPazar]) acilacakUrunler[aktifPazar] = {};
-                acilacakUrunler[aktifPazar][tUniqueKey] = true;
-                alert("İş planına eklendi ve buluta kaydedildi! 🚧");
-            } else {
-                let pIndex = Number(secilenDeger);
-                if (!manuelEslesmeler[aktifPazar]) manuelEslesmeler[aktifPazar] = {};
-                manuelEslesmeler[aktifPazar][tUniqueKey] = pIndex;
-                await setDoc(doc(window.firebaseDb, "eslesmeler", docId), { pazar: aktifPazar, tKey: tUniqueKey, pIndex: pIndex, type: 'match' });
-                alert("Eşleşme buluta kaydedildi! ☁️");
-            }
-            analiziBaslat();
-        };
-
-        window.acilacaktanCikar = async function(tIdx) {
-            let row = tsoftData[tIdx];
-            let tUniqueKey = String(kolonDegeriBul(row, ['web servis kodu', 'stok kodu', 'sku', 'stokkodu'])).trim() || String(kolonDegeriBul(row, ['barkod'])).trim();
-            if (acilacakUrunler[aktifPazar]) delete acilacakUrunler[aktifPazar][tUniqueKey];
-            const { doc, deleteDoc } = window.firebaseMethods;
-            await deleteDoc(doc(window.firebaseDb, "eslesmeler", `${aktifPazar}_${tUniqueKey.replace(/[^a-zA-Z0-9]/g, "_")}`));
-            analiziBaslat();
-        };
-
-        function analiziBaslat() {
-            if(tsoftData.length === 0 || pazarVerileri[aktifPazar].length === 0) {
-                alert('Lütfen önce T-Soft ve Pazar Yeri Excel dosyalarını yükleyin.');
-                return;
-            }
-
-            document.getElementById('sonucAlani').classList.remove('hidden');
-            document.getElementById('ozetBaslik').innerText = `📊 ${aktifPazar} Karşılaştırma Özeti`;
-
-            let pazarBarkodMap = new Map(), pazarKodMap = new Map(), pazarIsimMap = new Map();
-            pazarVerileri[aktifPazar].forEach((pRow, idx) => {
-                let pBarkod = String(kolonDegeriBul(pRow, ['barkod', 'barcode'])).trim();
-                let pKod = String(kolonDegeriBul(pRow, ['web servis kodu', 'stok kodu', 'sku', 'stokkodu', 'merchant sku'])).trim();
-                let pIsim = String(kolonDegeriBul(pRow, ['ürün adı', 'urun adi', 'title'])).trim().toLowerCase();
-                if(pBarkod) pBarkod.split(';').forEach(b => { if(b.trim()) pazarBarkodMap.set(b.trim(), idx); });
-                if(pKod) pazarKodMap.set(pKod, idx);
-                if(pIsim) pazarIsimMap.set(pIsim, idx);
-            });
-
-            let pazarSecenekleriHTML = `<option value="">-- Pazar Yerindeki Ürünü Seç --</option><option value="ACILACAK_URUN" style="font-weight:bold; color:#b45309;">🚧 [İŞ PLANINA EKLE] Açılacak Ürün</option>`;
-            pazarVerileri[aktifPazar].forEach((pRow, idx) => {
-                let pIsim = kolonDegeriBul(pRow, ['ürün adı', 'urun adi', 'title']);
-                let pSku = kolonDegeriBul(pRow, ['merchant sku', 'stok kodu', 'sku']);
-                pazarSecenekleriHTML += `<option value="${idx}">${pIsim || ('Ürün #' + idx)} (SKU: ${pSku || '-'})</option>`;
-            });
-
-            let tabloHTML = "", eslesmeyenHTML = "", acilicakHTML = "";
-            let eslesenSayisi = 0, hataSayisi = 0, acilicakSayisi = 0, eslesmeyenSayisi = 0;
-            let acilicakRows = [];
-
-            tsoftData.forEach((tRow, tIdx) => {
-                let tBarkod = String(kolonDegeriBul(tRow, ['barkod', 'barcode'])).trim();
-                let tKod = String(kolonDegeriBul(tRow, ['web servis kodu', 'stok kodu', 'sku'])).trim();
-                let tIsim = String(kolonDegeriBul(tRow, ['ürün adı', 'urun adi', 'title'])).trim();
-                let tStok = Number(kolonDegeriBul(tRow, ['stok', 'stok miktari', 'miktar'])) || 0;
-                let tFiyat = Number(kolonDegeriBul(tRow, ['kdv dahil fiyat', 'satis fiyati', 'fiyat'])) || 0;
-                let tUniqueKey = tKod || tBarkod || tIsim;
-
-                if (acilacakUrunler[aktifPazar]?.[tUniqueKey]) {
-                    acilicakSayisi++;
-                    acilicakRows.push({ tIsim, tKod, tBarkod, tStok, tFiyat, tIdx });
-                    return;
-                }
-
-                let eslesenIdx = null, yontem = "";
-                if(manuelEslesmeler[aktifPazar]?.[tUniqueKey] !== undefined) {
-                    eslesenIdx = manuelEslesmeler[aktifPazar][tUniqueKey];
-                    yontem = '<span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-semibold">Buluttan Eşleşti</span>';
-                } else if(tBarkod && pazarBarkodMap.has(tBarkod)) {
-                    eslesenIdx = pazarBarkodMap.get(tBarkod);
-                    yontem = '<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">Barkod</span>';
-                } else if(tKod && pazarKodMap.has(tKod)) {
-                    eslesenIdx = pazarKodMap.get(tKod);
-                    yontem = '<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-semibold">Stok Kodu</span>';
-                } else if(tIsim && pazarIsimMap.has(tIsim.toLowerCase())) {
-                    eslesenIdx = pazarIsimMap.get(tIsim.toLowerCase());
-                    yontem = '<span class="bg-amber-100 text-amber-800 px-2 py-1 rounded text-xs font-semibold">Ürün Adı</span>';
-                }
-
-                if(eslesenIdx !== null && pazarVerileri[aktifPazar][eslesenIdx]) {
-                    eslesenSayisi++;
-                    let pRow = pazarVerileri[aktifPazar][eslesenIdx];
-                    let pStok = Number(kolonDegeriBul(pRow, ['stok', 'stok miktari', 'miktar'])) || 0;
-                    let pFiyat = Number(kolonDegeriBul(pRow, ['kdv dahil fiyat', 'satis fiyati', 'fiyat'])) || 0;
-
-                    let hatalar = [];
-                    if(tStok <= 0 && pStok > 0) hatalar.push('<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold">Stok Hatası (T-Soft: 0)</span>');
-                    if(tFiyat > 0 && pFiyat > 0 && Math.abs(tFiyat - pFiyat) > 1) hatalar.push('<span class="bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs font-bold">Fiyat Uyumsuzluğu</span>');
-
-                    if(hatalar.length > 0) {
-                        hataSayisi++;
-                        tabloHTML += `<tr class="border-b border-slate-100"><td class="p-3">${yontem}</td><td class="p-3 font-medium">${tIsim}</td><td class="p-3 text-blue-700">Stok: ${tStok} | Fiyat: ${tFiyat}</td><td class="p-3">Stok: ${pStok} | Fiyat: ${pFiyat}</td><td class="p-3">${hatalar.join('<br>')}</td></tr>`;
-                    }
-                } else {
-                    eslesmeyenSayisi++;
-                    eslesmeyenHTML += `<tr class="border-b border-slate-100"><td class="p-3 font-medium">${tIsim}<br><span class="text-xs text-slate-400">Kod: ${tKod || '-'}</span></td><td class="p-3 text-blue-700">Stok: ${tStok} | Fiyat: ${tFiyat}</td><td class="p-3"><select id="select-${tIdx}" class="w-full p-2 border rounded text-xs bg-white">${pazarSecenekleriHTML}</select></td><td class="p-3 text-center"><button onclick="manuelEsleKaydet(${tIdx})" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded text-xs font-semibold shadow">Buluta Kaydet</button></td></tr>`;
-                }
-            });
-
-            document.getElementById('tabloIcerik').innerHTML = tabloHTML || `<tr><td colspan="5" class="p-6 text-center text-slate-500">Hata bulunamadı! 🎉</td></tr>`;
-            document.getElementById('eslesmeyenTabloIcerik').innerHTML = eslesmeyenHTML || `<tr><td colspan="4" class="p-6 text-center text-slate-500">Bekleyen ürün kalmadı.</td></tr>`;
-            document.getElementById('acilicakTabloIcerik').innerHTML = acilicakRows.map(i => `<tr class="border-b border-slate-100"><td class="p-3 font-medium">${i.tIsim}</td><td class="p-3 text-xs font-mono">${i.tKod || '-'}</td><td class="p-3 text-blue-700">Stok: ${i.tStok} | Fiyat: ${i.tFiyat}</td><td class="p-3 text-center"><button onclick="acilacaktanCikar(${i.tIdx})" class="bg-rose-600 text-white px-3 py-1.5 rounded text-xs font-semibold">Çıkar</button></td></tr>`).join('') || `<tr><td colspan="4" class="p-6 text-center text-slate-500">İş planında açılacak ürün yok.</td></tr>`;
-
-            document.getElementById('ozetIcerik').innerHTML = `
-                <div class="bg-slate-50 p-4 rounded-lg border"><div class="text-2xl font-bold text-blue-600">${tsoftData.length}</div><div class="text-sm text-slate-500">T-Soft Ürün</div></div>
-                <div class="bg-slate-50 p-4 rounded-lg border"><div class="text-2xl font-bold text-slate-700">${eslesenSayisi}</div><div class="text-sm text-slate-500">Eşleşen</div></div>
-                <div class="bg-slate-50 p-4 rounded-lg border"><div class="text-2xl font-bold text-red-600">${hataSayisi}</div><div class="text-sm text-slate-500">Kritik Hata</div></div>
-                <div class="bg-slate-50 p-4 rounded-lg border"><div class="text-2xl font-bold text-amber-600">${acilicakSayisi}</div><div class="text-sm text-slate-500">Açılacak Ürün</div></div>
-                <div class="bg-slate-50 p-4 rounded-lg border"><div class="text-2xl font-bold text-slate-500">${eslesmeyenSayisi}</div><div class="text-sm text-slate-500">Bekleyen</div></div>
-            `;
-        }
-    </script>
-</body>
-</html>
+<div class="row" style="margin-bottom:8px">
+<select id="fl"></select>
+<input type="text" id="q" placeholder="Ara: ad, barkod, kod" style="flex:1 1 220px">
+<label class="st"><input type="checkbox" id="df"> Sadece fiyat/stok farkı olanlar</label>
+</div>
+<div class="tabs" id="tabs"></div>
+<div id="view"></div>
+</main>
+<script>
+const MPS=['Trendyol','Hepsiburada','N11'],TAGS=['Ürün Açılacak','Fiyat Kontrol Edilecek','Stok Güncellenecek','İncelenecek'];
+let ts=[],tsB={},tsS={},rep={},tab='m',flt='Hepsi',q='';
+const ld=k=>{try{return JSON.parse(localStorage.getItem(k))||{}}catch(e){return{}}};
+const sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+let maps=ld('tm_maps'),tags=ld('tm_tags');
+const $=id=>document.getElementById(id);
+const norm=s=>String(s).toLowerCase().replace(/ı/g,'i').replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ş/g,'s').replace(/ö/g,'o').replace(/ç/g,'c').replace(/[^a-z0-9]/g,'');
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const S=v=>v==null?'':String(v).trim();
+const BC=v=>typeof v==='number'?String(Math.round(v)):S(v).replace(/\s/g,'').replace(/\.0+$/,'');
+const NUM=v=>{if(v===''||v==null)return null;if(typeof v==='number')return v;let s=String(v).trim();if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');const n=parseFloat(s);return isNaN(n)?null:n};
+function find(h,c){const n=h.map(norm);for(const x of c){const i=n.indexOf(x);if(i>=0)return h[i]}for(const x of c){const i=n.findIndex(v=>v.includes(x));if(i>=0)return h[i]}return null}
+const F=[['code','SKU / stok kodu'],['barcode','Barkod'],['name','Ürün adı'],['price','Fiyat'],['stock','Stok']];
+function detect(h,mp){return{code:find(h,mp==='Hepsiburada'?['sku','hepsiburadasku','saticistokkodu','stokkodu']:['webserviskodu','tedarikcistokkodu','saticistokkodu','stokkodu','sku']),
+ barcode:find(h,['barkod','barcode']),
+ price:find(h,['trendyoldasatilacakfiyatkdvdahil','n11satisfiyatikdvdahil','kdvdahilfiyat','satilacakfiyat','satisfiyati','fiyat']),
+ stock:find(h,['urunstokadedi','stokadedi','satilabilirstok','stok','miktar']),
+ name:find(h,['urunadi','urunismi','urunad','baslik','adi'])}}
+function parse(rows,c){const g=(r,k)=>k?r[k]:'';return rows.map(r=>({code:S(g(r,c.code)),bcs:BL(g(r,c.barcode)),barcode:BL(g(r,c.barcode)).join(' / '),price:NUM(g(r,c.price)),stock:NUM(g(r,c.stock)),name:S(g(r,c.name))})).filter(x=>x.code||x.barcode)}
+function pickSheet(wb){let best=null,bs=-1;for(const n of wb.SheetNames){const r=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:''});const h=(r[0]||[]).map(norm);const sc=(h.some(x=>x.includes('barkod')||x.includes('barcode'))?1e6:0)+r.length;if(sc>bs){bs=sc;best=wb.Sheets[n]}}return best}
+const BL=v=>typeof v==='number'?[String(Math.round(v))]:S(v).split(/[;,\s]+/).map(x=>x.replace(/\.0+$/,'')).filter(Boolean);
+function readFile(f,cb){const r=new FileReader();r.onload=e=>{try{const wb=XLSX.read(e.target.result,{type:'array'});cb(XLSX.utils.sheet_to_json(pickSheet(wb),{defval:'',raw:true}))}catch(x){alert('Dosya okunamadı: '+x.message)}};r.readAsArrayBuffer(f)}
+$('fts').onchange=e=>{const f=e.target.files[0];if(!f)return;readFile(f,rows=>{const l=parse(rows,detect(rows[0]?Object.keys(rows[0]):[],'ts'));ts=l;tsB={};tsS={};l.forEach(t=>{t.k=norm(t.name+t.code+t.barcode);(t.bcs||[]).forEach(b=>tsB[b]=t);if(t.code)tsS[t.code]=t});
+ const nb=l.filter(t=>t.barcode).length;$('sts').innerHTML='<span class="ok">'+l.length+' ürün</span>, '+nb+' barkodlu';render()})};
+$('fmp').onchange=e=>{const f=e.target.files[0];if(!f)return;const mp=$('mps').value;readFile(f,rows=>{raw[mp]=rows;repar(mp);render()});e.target.value=''};
+let raw={},sel={},scol=ld('tm_cols'),df=false;
+const kof=(mp,r)=>mp==='Hepsiburada'?(r.code||r.barcode):(r.barcode||r.code);
+function repar(mp){const rows=raw[mp]||[];if(!rows.length)return;const h=Object.keys(rows[0]),c=detect(h,mp),sc=scol[mp]||{};F.forEach(([k])=>{if(sc[k]&&h.includes(sc[k]))c[k]=sc[k]});sel[mp]=c;rep[mp]=parse(rows,c);cm()}
+function cm(){const mp=$('mps').value,rows=raw[mp];if(!rows||!rows.length){$('cm').innerHTML='';$('stm').textContent='Yüklenmedi';return}
+ const h=Object.keys(rows[0]);$('stm').innerHTML='<span class="ok">'+mp+': '+(rep[mp]||[]).length+' ürün</span>';
+ $('cm').innerHTML=F.map(([k,l])=>'<label class="st">'+l+' <select class="cs" data-k="'+k+'"><option value="">-</option>'+h.map(x=>'<option'+(sel[mp][k]===x?' selected':'')+'>'+esc(x)+'</option>').join('')+'</select></label>').join('')}
+const hasDiff=x=>(x.r.price!=null&&x.t.price!=null&&x.r.price!==x.t.price)||(x.r.stock!=null&&x.t.stock!=null&&x.r.stock!==x.t.stock);
+function calc(mp){const o={m:[],u:[]};(rep[mp]||[]).forEach(r=>{const key=kof(mp,r);let t=null,how='Barkod';for(const b of r.bcs){if(tsB[b]){t=tsB[b];break}}
+ if(!t){const sku=(maps[mp]||{})[key];if(sku){t=tsB[sku]||tsS[sku]||{code:sku,barcode:sku,name:'(T-Soft listesinde yok)',price:null,stock:null};how='Manuel'}}
+ t?o.m.push({mp,r,t,how,key}):o.u.push({mp,r,key})});return o}
+const match=x=>!q||norm(x.r.name+x.r.barcode+x.r.code+(x.t?x.t.code:'')).includes(norm(q));
+const fm=n=>n==null?'-':n.toLocaleString('tr-TR');
+function dc(a,b){return a!=null&&b!=null&&a!==b?' class="d"':''}
+function render(){
+ const mps=MPS.filter(m=>rep[m]&&(flt==='Hepsi'||flt===m));
+ let M=[],U=[];mps.forEach(m=>{const o=calc(m);M=M.concat(o.m);U=U.concat(o.u)});
+ const T=[];Object.keys(tags).forEach(m=>{if(flt!=='Hepsi'&&flt!==m)return;Object.keys(tags[m]).forEach(k=>{const r=(rep[m]||[]).find(x=>kof(m,x)===k)||{name:'',barcode:k,code:''};T.push({mp:m,key:k,r,tag:tags[m][k]})})});
+ const Mf=M.filter(match).filter(x=>!df||hasDiff(x)),Uf=U.filter(match),Tf=T.filter(match);
+ $('tabs').innerHTML=[['m','Eşleşenler',M.length],['u','Eşleşme bekleyenler',U.length],['p','İş planı & etiketler',T.length]].map(a=>'<button data-t="'+a[0]+'" class="'+(tab===a[0]?'on':'')+'">'+a[1]+' ('+a[2]+')</button>').join('');
+ const lim=200;let h='';
+ if(!mps.length&&tab!=='p')h='<div class="em">Önce T-Soft listesini ve bir pazaryeri raporu yükle.</div>';
+ else if(tab==='m'){
+  h=Mf.length?'<div class="sc"><table><tr><th>Pazaryeri</th><th>Ürün</th><th>Barkod</th><th>T-Soft (kod / barkod)</th><th>Eşleşme</th><th>Fiyat (PY / T-Soft)</th><th>Stok (PY / T-Soft)</th></tr>'+Mf.slice(0,lim).map(x=>
+  '<tr><td>'+x.mp+'</td><td>'+esc(x.r.name||x.t.name)+'<div class="st">'+esc(x.r.code)+'</div></td><td>'+esc(x.r.barcode)+'</td><td>'+esc(x.t.code)+'<div class="st">'+esc(x.t.barcode)+'</div></td><td>'+x.how+(x.how==='Manuel'?' <button class="rm" data-mp="'+x.mp+'" data-k="'+esc(x.key)+'">Kaldır</button>':'')+'</td><td><span'+dc(x.r.price,x.t.price)+'>'+fm(x.r.price)+' / '+fm(x.t.price)+'</span></td><td><span'+dc(x.r.stock,x.t.stock)+'>'+fm(x.r.stock)+' / '+fm(x.t.stock)+'</span></td></tr>').join('')+'</table></div>':'<div class="em">Eşleşen ürün yok.</div>';
+  if(Mf.length>lim)h+='<p class="st">İlk '+lim+' satır gösteriliyor; aramayı daralt.</p>';
+ }else if(tab==='u'){
+  h=Uf.length?Uf.slice(0,lim).map(x=>{const cur=(tags[x.mp]||{})[x.key]||'';return '<div class="card"><b>'+esc(x.r.name||'(adsız)')+'</b><div class="mt">'+x.mp+' · Barkod: '+esc(x.r.barcode||'-')+' · Kod: '+esc(x.r.code||'-')+' · Fiyat '+fm(x.r.price)+' · Stok '+fm(x.r.stock)+'</div><div class="row"><div class="ed"><input type="text" class="sk" data-mp="'+x.mp+'" data-k="'+esc(x.key)+'" placeholder="T-Soft ürününü ara veya barkod yaz"><div class="sg" hidden></div></div><button class="p sb">Eşleştir</button><select class="tgs" data-mp="'+x.mp+'" data-k="'+esc(x.key)+'"><option value="">Etiket yok</option>'+TAGS.map(t=>'<option'+(cur===t?' selected':'')+'>'+t+'</option>').join('')+'</select></div></div>'}).join(''):'<div class="em">Eşleşme bekleyen ürün yok.</div>';
+  if(Uf.length>lim)h+='<p class="st">İlk '+lim+' ürün gösteriliyor; aramayı daralt.</p>';
+ }else{
+  h='<div class="row" style="margin-bottom:8px"><button id="ec">İş planını indir (CSV)</button></div>';
+  h+=Tf.length?TAGS.map(t=>{const l=Tf.filter(x=>x.tag===t);return l.length?'<h3>'+t+' <span class="tg">'+l.length+'</span></h3><div class="sc"><table><tr><th>Pazaryeri</th><th>Ürün</th><th>Barkod / kod</th></tr>'+l.map(x=>'<tr><td>'+x.mp+'</td><td>'+esc(x.r.name)+'</td><td>'+esc(x.key)+'</td></tr>').join('')+'</table></div>':''}).join(''):'<div class="em">Etiketlenmiş ürün yok. "Eşleşme bekleyenler" sekmesinden etiket seç.</div>';
+ }
+ const ae=document.activeElement;if(ae&&ae.classList&&ae.classList.contains('sk'))return;
+ $('view').innerHTML=h;
+}
+function setMap(mp,k,sku){sku=S(sku);if(!sku)return;(maps[mp]=maps[mp]||{})[k]=sku;sv('tm_maps',maps);document.activeElement&&document.activeElement.blur();render()}
+$('view').addEventListener('input',e=>{const i=e.target;if(!i.classList.contains('sk'))return;const s=i.nextElementSibling,v=norm(i.value);
+ if(v.length<2){s.hidden=true;return}
+ const r=ts.filter(t=>t.k.includes(v)).slice(0,8);
+ s.innerHTML=r.map(t=>'<div data-sku="'+esc((t.bcs&&t.bcs[0])||t.code)+'">'+esc(t.name)+' <span class="st">'+esc(t.code)+' · '+esc(t.barcode)+'</span></div>').join('')||'<div class="st">Sonuç yok; barkod yazıp Eşleştir\'e bas.</div>';s.hidden=false});
+$('view').addEventListener('click',e=>{const t=e.target;
+ const sg=t.closest('.sg div[data-sku]');if(sg){const i=sg.parentNode.previousElementSibling;setMap(i.dataset.mp,i.dataset.k,sg.dataset.sku);return}
+ if(t.classList.contains('sb')){const i=t.parentNode.querySelector('.sk');setMap(i.dataset.mp,i.dataset.k,i.value);return}
+ if(t.classList.contains('rm')){delete maps[t.dataset.mp][t.dataset.k];sv('tm_maps',maps);render();return}
+ if(t.id==='ec'){const rows=[['Etiket','Pazaryeri','Barkod/Kod','Ürün']];Object.keys(tags).forEach(m=>Object.keys(tags[m]).forEach(k=>{const r=(rep[m]||[]).find(x=>kof(m,x)===k);rows.push([tags[m][k],m,k,r?r.name:''])}));
+  dl('is-plani.csv','\ufeff'+rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(';')).join('\n'),'text/csv')}});
+$('view').addEventListener('change',e=>{const t=e.target;if(!t.classList.contains('tgs'))return;const m=t.dataset.mp,k=t.dataset.k;tags[m]=tags[m]||{};if(t.value)tags[m][k]=t.value;else delete tags[m][k];sv('tm_tags',tags);render()});
+$('cm').onchange=e=>{const k=e.target.dataset.k;if(!k)return;const mp=$('mps').value;(scol[mp]=scol[mp]||{})[k]=e.target.value;sv('tm_cols',scol);repar(mp);render()};
+$('mps').onchange=cm;$('df').onchange=e=>{df=e.target.checked;render()};
+$('tabs').onclick=e=>{if(e.target.dataset.t){tab=e.target.dataset.t;render()}};
+$('q').oninput=e=>{q=e.target.value;render()};
+$('fl').innerHTML=['Hepsi'].concat(MPS).map(m=>'<option>'+m+'</option>').join('');
+$('fl').onchange=e=>{flt=e.target.value;render()};
+function dl(n,t,m){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:m}));a.download=n;a.click()}
+$('ex').onclick=()=>dl('manual_mappings.json',JSON.stringify({maps,tags},null,1),'application/json');
+$('im').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=x=>{try{const d=JSON.parse(x.target.result);[['maps',maps],['tags',tags]].forEach(([n,o])=>{Object.keys(d[n]||{}).forEach(m=>{o[m]=Object.assign(o[m]||{},d[n][m])})});sv('tm_maps',maps);sv('tm_tags',tags);render()}catch(err){alert('JSON okunamadı')}};r.readAsText(f);e.target.value=''};
+render();
+</script></body></html>
