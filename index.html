@@ -32,7 +32,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 .tabs button.on{background:var(--ac);color:var(--onac)}
 .sc{overflow-x:auto;background:var(--card);border:1px solid var(--ln);border-radius:14px;box-shadow:var(--sh)}
 table{border-collapse:collapse;width:100%;font-size:14px}
-th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--ln);vertical-align:top}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--ln);vertical-align:middle}
 th{color:var(--mu);font-weight:700;white-space:nowrap;font-size:13px;background:var(--bg)}tr:last-child td{border-bottom:0}
 .d{background:var(--wab);color:var(--wa);border-radius:6px;padding:1px 6px;font-weight:700}
 .tg{display:inline-block;background:var(--acb);color:var(--ac);border-radius:10px;padding:1px 9px;font-size:12px;font-weight:700}
@@ -147,10 +147,14 @@ function calc(mp){
    if(tItem.code && matchedTsKeys.has(tItem.code)) isListed=true;
    (tItem.bcs||[]).forEach(b=>{ if(matchedTsKeys.has(b)) isListed=true; });
    if(!isListed){
-    if(isEbioOrDelonghi(tItem)){
-     o.ebio.push({mp,t:tItem});
+    const itemKey = tItem.code || (tItem.bcs && tItem.bcs[0]) || tItem.name;
+    const curTag = (tags[mp]||{})[itemKey];
+    if(curTag === OLD_TAG){
+     o.old.push({mp,r:{name:tItem.name,code:tItem.code,barcode:tItem.barcode,price:tItem.price,stock:tItem.stock},key:itemKey});
+    }else if(isEbioOrDelonghi(tItem)){
+     o.ebio.push({mp,t:tItem,key:itemKey});
     }else{
-     o.un.push({mp,t:tItem});
+     o.un.push({mp,t:tItem,key:itemKey});
     }
    }
   });
@@ -200,8 +204,8 @@ function render(){
   h=Uf.length?Uf.slice(0,lim).map(x=>{const curTag=(tags[x.mp]||{})[x.key]||'';return '<div class="card" style="--c:'+MC[x.mp]+'"><b>'+esc(x.r.name||'(adsız)')+'</b><div class="mt">'+chip(x.mp)+' &nbsp;Barkod: '+esc(x.r.barcode||'-')+' · Kod: '+esc(x.r.code||'-')+' · Fiyat '+fm(x.r.price)+' · Stok '+fm(x.r.stock)+'</div><div class="row"><div class="ed"><input type="text" class="sk" data-mp="'+x.mp+'" data-k="'+esc(x.key)+'" placeholder="T-Soft ürününü ara veya barkod yaz"><div class="sg" hidden></div></div><button class="p sb">Eşleştir</button><select class="tgs" data-mp="'+x.mp+'" data-k="'+esc(x.key)+'"><option value="">Etiket yok</option>'+TAGS.map(t=>'<option'+(curTag===t?' selected':'')+'>'+t+'</option>').join('')+'</select></div></div>'}).join(''):'<div class="em">Eşleşme bekleyen ürün yok.</div>';
   if(Uf.length>lim)h+='<p class="st">İlk '+lim+' ürün gösteriliyor; aramayı daralt.</p>';
  }else if(!plan&&tab==='un'){
-  h=UNf.length?'<div class="sc"><table><tr><th>Pazaryeri</th><th>T-Soft Ürün Adı</th><th>T-Soft Kodu (SKU)</th><th>Barkod</th><th>T-Soft Fiyat</th><th>T-Soft Stok</th></tr>'+UNf.slice(0,lim).map(x=>
-  '<tr><td>'+chip(x.mp)+'</td><td><b>'+esc(x.t.name)+'</b></td><td><span class="tg">'+esc(x.t.code)+'</span></td><td>'+esc(x.t.barcode||'-')+'</td><td>₺'+fm(x.t.price)+'</td><td>'+fm(x.t.stock)+'</td></tr>').join('')+'</table></div>':'<div class="em">Pazaryerinde açılacak yeni T-Soft ürünü bulunmuyor.</div>';
+  h=UNf.length?'<div class="sc"><table><tr><th>Pazaryeri</th><th>T-Soft Ürün Adı</th><th>T-Soft Kodu (SKU)</th><th>Barkod</th><th>T-Soft Fiyat</th><th>T-Soft Stok</th><th>İşlem</th></tr>'+UNf.slice(0,lim).map(x=>
+  '<tr><td>'+chip(x.mp)+'</td><td><b>'+esc(x.t.name)+'</b></td><td><span class="tg">'+esc(x.t.code)+'</span></td><td>'+esc(x.t.barcode||'-')+'</td><td>₺'+fm(x.t.price)+'</td><td>'+fm(x.t.stock)+'</td><td><select class="tgs" data-mp="'+x.mp+'" data-k="'+esc(x.key)+'"><option value="">Aksiyon Seç</option><option value="'+OLD_TAG+'">Eski Ürün (Pasif)</option></select></td></tr>').join('')+'</table></div>':'<div class="em">Pazaryerinde açılacak yeni T-Soft ürünü bulunmuyor.</div>';
   if(UNf.length>lim)h+='<p class="st">İlk '+lim+' ürün gösteriliyor; aramayı daralt.</p>';
  }else if(!plan&&tab==='ebio'){
   h=EBIOf.length?'<div class="sc"><table><tr><th>Pazaryeri</th><th>T-Soft Ürün Adı</th><th>T-Soft Kodu (SKU)</th><th>Barkod</th><th>T-Soft Fiyat</th><th>T-Soft Stok</th></tr>'+EBIOf.slice(0,lim).map(x=>
