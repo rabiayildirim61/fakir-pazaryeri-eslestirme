@@ -67,7 +67,7 @@ h3{margin:18px 0 8px;font-size:16px}.em{padding:36px;text-align:center;color:var
 <input type="text" id="q" placeholder="Ara: ad, barkod, kod" style="flex:1 1 220px">
 <label class="st" id="dfl"><input type="checkbox" id="df"> Sadece fiyat/stok farkı olanlar</label>
 <button id="exd" class="p" hidden>Farkları indir</button>
-<button id="exun" class="p" style="background:#e11d48;border-color:#e11d48;color:#fff" hidden>Açılmayanları indir</button>
+<button id="exun" class="p" style="background:#e11d48;border-color:#e11d48;color:#fff" hidden>Açılacakları indir</button>
 <button id="markAllOld" class="p" style="background:#64748b;border-color:#64748b;color:#fff" hidden>Tümünü Eski Ürün Yap (Etiketle)</button>
 </div>
 <div class="tabs" id="tabs"></div>
@@ -108,8 +108,16 @@ function cm(){const mp=cur,rows=raw[mp];if(!rows||!rows.length){$('cm').innerHTM
  $('cm').innerHTML=F.map(([k,l])=>'<label class="st">'+l+' <select class="cs" data-k="'+k+'"><option value="">-</option>'+h.map(x=>'<option'+(sel[mp][k]===x?' selected':'')+'>'+esc(x)+'</option>').join('')+'</select></label>').join('')}
 const hasDiff=x=>(x.r.price!=null&&x.t.price!=null&&x.r.price!==x.t.price)||(x.r.stock!=null&&x.t.stock!=null&&x.r.stock!==x.t.stock);
 
+const isEbioOrDelonghi=t=>{
+ const code = S(t.code);
+ const nameNorm = norm(t.name + code);
+ const isDelonghi = code.startsWith('42') || nameNorm.includes('delonghi');
+ const isEbio = code.endsWith('-1') || nameNorm.includes('ebio');
+ return isDelonghi || isEbio;
+};
+
 function calc(mp){
- const o={m:[],u:[],un:[],old:[]};
+ const o={m:[],u:[],un:[],ebio:[],old:[]};
  const mpItems=rep[mp]||[];
  const matchedTsKeys=new Set();
 
@@ -139,7 +147,11 @@ function calc(mp){
    if(tItem.code && matchedTsKeys.has(tItem.code)) isListed=true;
    (tItem.bcs||[]).forEach(b=>{ if(matchedTsKeys.has(b)) isListed=true; });
    if(!isListed){
-    o.un.push({mp,t:tItem});
+    if(isEbioOrDelonghi(tItem)){
+     o.ebio.push({mp,t:tItem});
+    }else{
+     o.un.push({mp,t:tItem});
+    }
    }
   });
  }
@@ -153,7 +165,7 @@ function dc(a,b){return a!=null&&b!=null&&a!==b?' class="d"':''}
 
 function render(){
  const plan=cur==='plan',has=!!rep[cur];
- const o=!plan&&has?calc(cur):{m:[],u:[],un:[],old:[]},M=o.m,U=o.u,UN=o.un,OLD=o.old;
+ const o=!plan&&has?calc(cur):{m:[],u:[],un:[],ebio:[],old:[]},M=o.m,U=o.u,UN=o.un,EBIO=o.ebio,OLD=o.old;
  const T=[];Object.keys(tags).forEach(m=>{Object.keys(tags[m]).forEach(k=>{const r=(rep[m]||[]).find(x=>kof(m,x)===k)||{name:'',barcode:k,code:''};T.push({mp:m,key:k,r,tag:tags[m][k]})})});
  
  $('mt').innerHTML=MPS.map(m=>'<button data-m="'+m+'" class="'+(cur===m?'on':'')+'">'+chip(m)+(rep[m]?' <span class="bd">'+calc(m).u.length+'</span>':'')+'</button>').join('')+'<button data-m="plan" class="'+(plan?'on':'')+'">İş planı <span class="bd">'+T.length+'</span></button>';
@@ -164,16 +176,17 @@ function render(){
  $('exd').textContent='Farkları indir ('+M.filter(hasDiff).length+')';
 
  $('exun').hidden=plan||!has||tab!=='un';
- $('exun').textContent='Açılmayanları indir ('+UN.length+')';
+ $('exun').textContent='Açılacakları indir ('+UN.length+')';
 
  $('markAllOld').hidden=plan||!has||tab!=='u'||!U.length;
 
- const Mf=M.filter(match).filter(x=>!df||hasDiff(x)),Uf=U.filter(match),UNf=UN.filter(match),OLDf=OLD.filter(match),Tf=T.filter(match);
+ const Mf=M.filter(match).filter(x=>!df||hasDiff(x)),Uf=U.filter(match),UNf=UN.filter(match),EBIOf=EBIO.filter(match),OLDf=OLD.filter(match),Tf=T.filter(match);
  
  $('tabs').innerHTML=[
   ['m','Eşleşenler',M.length],
   ['u','Eşleşme bekleyenler',U.length],
-  ['un','Pazaryerinde Açılmayanlar',UN.length],
+  ['un','Pazaryerinde Açılacaklar',UN.length],
+  ['ebio','Ebio & Delonghi Ürünleri',EBIO.length],
   ['old','Eski / Pasif Ürünler',OLD.length]
  ].map(a=>'<button data-t="'+a[0]+'" class="'+(tab===a[0]?'on':'')+'">'+a[1]+' ('+a[2]+')</button>').join('');
 
@@ -188,8 +201,12 @@ function render(){
   if(Uf.length>lim)h+='<p class="st">İlk '+lim+' ürün gösteriliyor; aramayı daralt.</p>';
  }else if(!plan&&tab==='un'){
   h=UNf.length?'<div class="sc"><table><tr><th>Pazaryeri</th><th>T-Soft Ürün Adı</th><th>T-Soft Kodu (SKU)</th><th>Barkod</th><th>T-Soft Fiyat</th><th>T-Soft Stok</th></tr>'+UNf.slice(0,lim).map(x=>
-  '<tr><td>'+chip(x.mp)+'</td><td><b>'+esc(x.t.name)+'</b></td><td><span class="tg">'+esc(x.t.code)+'</span></td><td>'+esc(x.t.barcode||'-')+'</td><td>₺'+fm(x.t.price)+'</td><td>'+fm(x.t.stock)+'</td></tr>').join('')+'</table></div>':'<div class="em">Tüm T-Soft ürünleri bu pazaryerinde açılmış! Açılmayan ürün bulunmuyor.</div>';
+  '<tr><td>'+chip(x.mp)+'</td><td><b>'+esc(x.t.name)+'</b></td><td><span class="tg">'+esc(x.t.code)+'</span></td><td>'+esc(x.t.barcode||'-')+'</td><td>₺'+fm(x.t.price)+'</td><td>'+fm(x.t.stock)+'</td></tr>').join('')+'</table></div>':'<div class="em">Pazaryerinde açılacak yeni T-Soft ürünü bulunmuyor.</div>';
   if(UNf.length>lim)h+='<p class="st">İlk '+lim+' ürün gösteriliyor; aramayı daralt.</p>';
+ }else if(!plan&&tab==='ebio'){
+  h=EBIOf.length?'<div class="sc"><table><tr><th>Pazaryeri</th><th>T-Soft Ürün Adı</th><th>T-Soft Kodu (SKU)</th><th>Barkod</th><th>T-Soft Fiyat</th><th>T-Soft Stok</th></tr>'+EBIOf.slice(0,lim).map(x=>
+  '<tr><td>'+chip(x.mp)+'</td><td><b>'+esc(x.t.name)+'</b></td><td><span class="tg">'+esc(x.t.code)+'</span></td><td>'+esc(x.t.barcode||'-')+'</td><td>₺'+fm(x.t.price)+'</td><td>'+fm(x.t.stock)+'</td></tr>').join('')+'</table></div>':'<div class="em">Pazaryerinde açılmamış Ebio veya Delonghi ürünü bulunmuyor.</div>';
+  if(EBIOf.length>lim)h+='<p class="st">İlk '+lim+' ürün gösteriliyor; aramayı daralt.</p>';
  }else if(!plan&&tab==='old'){
   h=OLDf.length?OLDf.slice(0,lim).map(x=>{const curTag=(tags[x.mp]||{})[x.key]||OLD_TAG;return '<div class="card" style="--c:#64748b"><b>'+esc(x.r.name||'(adsız)')+'</b><div class="mt">'+chip(x.mp)+' &nbsp;Barkod: '+esc(x.r.barcode||'-')+' · Kod: '+esc(x.r.code||'-')+' · Fiyat '+fm(x.r.price)+' · Stok '+fm(x.r.stock)+'</div><div class="row"><select class="tgs" data-mp="'+x.mp+'" data-k="'+esc(x.key)+'"><option value="">Etiketi Kaldır (Aktife Al)</option>'+TAGS.map(t=>'<option'+(curTag===t?' selected':'')+'>'+t+'</option>').join('')+'</select></div></div>'}).join(''):'<div class="em">Eski / pasif olarak işaretlenmiş ürün yok.</div>';
   if(OLDf.length>lim)h+='<p class="st">İlk '+lim+' ürün gösteriliyor; aramayı daralt.</p>';
@@ -239,10 +256,10 @@ function exDiff(list,name){
 function exUnlisted(list,name){
  const rows=[['Pazaryeri','T-Soft Ürün Adı','T-Soft Stok Kodu (SKU)','T-Soft Barkod','T-Soft Fiyat','T-Soft Stok']];
  list.forEach(x=>rows.push([x.mp,x.t.name,x.t.code,x.t.barcode,x.t.price,x.t.stock]));
- const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Açılmayan Ürünler');XLSX.writeFile(wb,name)}
+ const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Açılacak Ürünler');XLSX.writeFile(wb,name)}
 
 $('exd').onclick=()=>{const l=calc(cur).m.filter(hasDiff);if(!l.length){alert('Fiyat veya stok farkı olan ürün yok.');return}exDiff(l,cur+'-fiyat-stok-farklari.xlsx')};
-$('exun').onclick=()=>{const l=calc(cur).un;if(!l.length){alert('Açılmayan ürün yok.');return}exUnlisted(l,cur+'-acilmayan-urunler.xlsx')};
+$('exun').onclick=()=>{const l=calc(cur).un;if(!l.length){alert('Açılacak ürün yok.');return}exUnlisted(l,cur+'-acilacak-urunler.xlsx')};
 $('exa').onclick=()=>{let l=[];MPS.filter(m=>rep[m]).forEach(m=>{l=l.concat(calc(m).m.filter(hasDiff))});if(!l.length){alert('Fark yok ya da henüz rapor yüklenmedi.');return}exDiff(l,'tum-fiyat-stok-farklari.xlsx')};
 
 function dl(n,t,m){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:m}));a.download=n;a.click()}
