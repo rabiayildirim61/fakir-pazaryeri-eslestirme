@@ -63,12 +63,19 @@ h3{margin:18px 0 8px;font-size:16px}.em{padding:36px;text-align:center;color:var
 <div class="row"><label class="f"><input type="file" id="fmp" accept=".xlsx,.xls,.csv"><span id="fmpl">Rapor yükle</span></label><span class="st" id="stm">Yüklenmedi</span></div>
 <div class="row" id="cm" style="margin-top:10px"></div>
 </div>
-<div class="row" style="margin-bottom:12px"><input type="text" id="q" placeholder="Ara: ad, barkod, kod" style="flex:1 1 220px"><label class="st" id="dfl"><input type="checkbox" id="df"> Sadece fiyat/stok farkı olanlar</label><button id="exd" class="p" hidden>Farkları indir</button></div>
+<div class="row" style="margin-bottom:12px">
+<input type="text" id="q" placeholder="Ara: ad, barkod, kod" style="flex:1 1 220px">
+<label class="st" id="dfl"><input type="checkbox" id="df"> Sadece fiyat/stok farkı olanlar</label>
+<button id="exd" class="p" hidden>Farkları indir</button>
+<button id="exun" class="p" style="background:#e11d48;border-color:#e11d48;color:#fff" hidden>Açılmayanları indir</button>
+<button id="markAllOld" class="p" style="background:#64748b;border-color:#64748b;color:#fff" hidden>Tümünü Eski Ürün Yap (Etiketle)</button>
+</div>
 <div class="tabs" id="tabs"></div>
 <div id="view"></div>
 </main>
 <script>
-const MPS=['Trendyol','Hepsiburada','N11','Beymen','İdefix','Pazarama','Amazon'],MC={Trendyol:'#f97316',Hepsiburada:'#e11d48',N11:'#7c3aed',Beymen:'#334155',İdefix:'#0ea5e9',Pazarama:'#10b981',Amazon:'#f59e0b'},chip=m=>'<span class="mpc"><i style="background:'+MC[m]+'"></i>'+m+'</span>',TAGS=['Ürün Açılacak','Fiyat Kontrol Edilecek','Stok Güncellenecek','İncelenecek'];
+const OLD_TAG = 'Eski Ürün (Pasif)';
+const MPS=['Trendyol','Hepsiburada','N11','Beymen','İdefix','Pazarama','Amazon'],MC={Trendyol:'#f97316',Hepsiburada:'#e11d48',N11:'#7c3aed',Beymen:'#334155',İdefix:'#0ea5e9',Pazarama:'#10b981',Amazon:'#f59e0b'},chip=m=>'<span class="mpc"><i style="background:'+MC[m]+'"></i>'+m+'</span>',TAGS=['Ürün Açılacak','Fiyat Kontrol Edilecek','Stok Güncellenecek','İncelenecek', OLD_TAG];
 let ts=[],tsB={},tsS={},rep={},tab='m',cur='Trendyol',q='';
 const ld=k=>{try{return JSON.parse(localStorage.getItem(k))||{}}catch(e){return{}}};
 const sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
@@ -100,23 +107,76 @@ function cm(){const mp=cur,rows=raw[mp];if(!rows||!rows.length){$('cm').innerHTM
  const h=Object.keys(rows[0]);$('stm').innerHTML='<span class="ok">'+mp+': '+(rep[mp]||[]).length+' ürün</span>';
  $('cm').innerHTML=F.map(([k,l])=>'<label class="st">'+l+' <select class="cs" data-k="'+k+'"><option value="">-</option>'+h.map(x=>'<option'+(sel[mp][k]===x?' selected':'')+'>'+esc(x)+'</option>').join('')+'</select></label>').join('')}
 const hasDiff=x=>(x.r.price!=null&&x.t.price!=null&&x.r.price!==x.t.price)||(x.r.stock!=null&&x.t.stock!=null&&x.r.stock!==x.t.stock);
-function calc(mp){const o={m:[],u:[]};(rep[mp]||[]).forEach(r=>{const key=kof(mp,r);let t=null,how='Barkod';for(const b of r.bcs){if(tsB[b]){t=tsB[b];break}}
- if(!t){const sku=(maps[mp]||{})[key];if(sku){t=tsB[sku]||tsS[sku]||{code:sku,barcode:sku,name:'(T-Soft listesinde yok)',price:null,stock:null};how='Manuel'}}
- if(!t&&r.code&&tsS[r.code]){t=tsS[r.code];how='Stok kodu'}
- t?o.m.push({mp,r,t,how,key}):o.u.push({mp,r,key})});return o}
-const match=x=>!q||norm(x.r.name+x.r.barcode+x.r.code+(x.t?x.t.code:'')).includes(norm(q));
+
+function calc(mp){
+ const o={m:[],u:[],un:[],old:[]};
+ const mpItems=rep[mp]||[];
+ const matchedTsKeys=new Set();
+
+ mpItems.forEach(r=>{
+  const key=kof(mp,r);let t=null,how='Barkod';
+  for(const b of r.bcs){if(tsB[b]){t=tsB[b];break}}
+  if(!t){const sku=(maps[mp]||{})[key];if(sku){t=tsB[sku]||tsS[sku]||{code:sku,barcode:sku,name:'(T-Soft listesinde yok)',price:null,stock:null};how='Manuel'}}
+  if(!t&&r.code&&tsS[r.code]){t=tsS[r.code];how='Stok kodu'}
+  
+  if(t){
+   o.m.push({mp,r,t,how,key});
+   if(t.code) matchedTsKeys.add(t.code);
+   (t.bcs||[]).forEach(b=>matchedTsKeys.add(b));
+  }else{
+   const curTag = (tags[mp]||{})[key];
+   if(curTag === OLD_TAG){
+    o.old.push({mp,r,key});
+   }else{
+    o.u.push({mp,r,key});
+   }
+  }
+ });
+
+ if(mpItems.length>0 && ts.length>0){
+  ts.forEach(tItem=>{
+   let isListed=false;
+   if(tItem.code && matchedTsKeys.has(tItem.code)) isListed=true;
+   (tItem.bcs||[]).forEach(b=>{ if(matchedTsKeys.has(b)) isListed=true; });
+   if(!isListed){
+    o.un.push({mp,t:tItem});
+   }
+  });
+ }
+
+ return o;
+}
+
+const match=x=>!q||norm((x.r?x.r.name:'')+(x.r?x.r.barcode:'')+(x.r?x.r.code:'')+(x.t?x.t.name+x.t.code+x.t.barcode:'')).includes(norm(q));
 const fm=n=>n==null?'-':n.toLocaleString('tr-TR');
 function dc(a,b){return a!=null&&b!=null&&a!==b?' class="d"':''}
+
 function render(){
  const plan=cur==='plan',has=!!rep[cur];
- const o=!plan&&has?calc(cur):{m:[],u:[]},M=o.m,U=o.u;
+ const o=!plan&&has?calc(cur):{m:[],u:[],un:[],old:[]},M=o.m,U=o.u,UN=o.un,OLD=o.old;
  const T=[];Object.keys(tags).forEach(m=>{Object.keys(tags[m]).forEach(k=>{const r=(rep[m]||[]).find(x=>kof(m,x)===k)||{name:'',barcode:k,code:''};T.push({mp:m,key:k,r,tag:tags[m][k]})})});
+ 
  $('mt').innerHTML=MPS.map(m=>'<button data-m="'+m+'" class="'+(cur===m?'on':'')+'">'+chip(m)+(rep[m]?' <span class="bd">'+calc(m).u.length+'</span>':'')+'</button>').join('')+'<button data-m="plan" class="'+(plan?'on':'')+'">İş planı <span class="bd">'+T.length+'</span></button>';
  $('mph').hidden=plan;$('tabs').hidden=plan||!has;$('dfl').hidden=plan||tab!=='m';
  $('fmpl').textContent=(has?'Raporu yenile: ':'Rapor yükle: ')+cur;
- $('exd').hidden=plan||!has;$('exd').textContent='Farkları indir ('+M.filter(hasDiff).length+')';
- const Mf=M.filter(match).filter(x=>!df||hasDiff(x)),Uf=U.filter(match),Tf=T.filter(match);
- $('tabs').innerHTML=[['m','Eşleşenler',M.length],['u','Eşleşme bekleyenler',U.length]].map(a=>'<button data-t="'+a[0]+'" class="'+(tab===a[0]?'on':'')+'">'+a[1]+' ('+a[2]+')</button>').join('');
+ 
+ $('exd').hidden=plan||!has||tab!=='m';
+ $('exd').textContent='Farkları indir ('+M.filter(hasDiff).length+')';
+
+ $('exun').hidden=plan||!has||tab!=='un';
+ $('exun').textContent='Açılmayanları indir ('+UN.length+')';
+
+ $('markAllOld').hidden=plan||!has||tab!=='u'||!U.length;
+
+ const Mf=M.filter(match).filter(x=>!df||hasDiff(x)),Uf=U.filter(match),UNf=UN.filter(match),OLDf=OLD.filter(match),Tf=T.filter(match);
+ 
+ $('tabs').innerHTML=[
+  ['m','Eşleşenler',M.length],
+  ['u','Eşleşme bekleyenler',U.length],
+  ['un','Pazaryerinde Açılmayanlar',UN.length],
+  ['old','Eski / Pasif Ürünler',OLD.length]
+ ].map(a=>'<button data-t="'+a[0]+'" class="'+(tab===a[0]?'on':'')+'">'+a[1]+' ('+a[2]+')</button>').join('');
+
  const lim=200;let h='';
  if(!plan&&!has)h='<div class="em">'+cur+' raporunu yükle'+(ts.length?'':' (önce T-Soft listesini yükle)')+'.</div>';
  else if(!plan&&tab==='m'){
@@ -124,8 +184,15 @@ function render(){
   '<tr><td>'+chip(x.mp)+'</td><td>'+esc(x.r.name||x.t.name)+'<div class="st">'+esc(x.r.code)+'</div></td><td>'+esc(x.r.barcode)+'</td><td>'+esc(x.t.code)+'<div class="st">'+esc(x.t.barcode)+'</div></td><td>'+x.how+(x.how==='Manuel'?' <button class="rm" data-mp="'+x.mp+'" data-k="'+esc(x.key)+'">Kaldır</button>':'')+'</td><td><span'+dc(x.r.price,x.t.price)+'>'+fm(x.r.price)+' / '+fm(x.t.price)+'</span></td><td><span'+dc(x.r.stock,x.t.stock)+'>'+fm(x.r.stock)+' / '+fm(x.t.stock)+'</span></td></tr>').join('')+'</table></div>':'<div class="em">Eşleşen ürün yok.</div>';
   if(Mf.length>lim)h+='<p class="st">İlk '+lim+' satır gösteriliyor; aramayı daralt.</p>';
  }else if(!plan&&tab==='u'){
-  h=Uf.length?Uf.slice(0,lim).map(x=>{const cur=(tags[x.mp]||{})[x.key]||'';return '<div class="card" style="--c:'+MC[x.mp]+'"><b>'+esc(x.r.name||'(adsız)')+'</b><div class="mt">'+chip(x.mp)+' &nbsp;Barkod: '+esc(x.r.barcode||'-')+' · Kod: '+esc(x.r.code||'-')+' · Fiyat '+fm(x.r.price)+' · Stok '+fm(x.r.stock)+'</div><div class="row"><div class="ed"><input type="text" class="sk" data-mp="'+x.mp+'" data-k="'+esc(x.key)+'" placeholder="T-Soft ürününü ara veya barkod yaz"><div class="sg" hidden></div></div><button class="p sb">Eşleştir</button><select class="tgs" data-mp="'+x.mp+'" data-k="'+esc(x.key)+'"><option value="">Etiket yok</option>'+TAGS.map(t=>'<option'+(cur===t?' selected':'')+'>'+t+'</option>').join('')+'</select></div></div>'}).join(''):'<div class="em">Eşleşme bekleyen ürün yok.</div>';
+  h=Uf.length?Uf.slice(0,lim).map(x=>{const curTag=(tags[x.mp]||{})[x.key]||'';return '<div class="card" style="--c:'+MC[x.mp]+'"><b>'+esc(x.r.name||'(adsız)')+'</b><div class="mt">'+chip(x.mp)+' &nbsp;Barkod: '+esc(x.r.barcode||'-')+' · Kod: '+esc(x.r.code||'-')+' · Fiyat '+fm(x.r.price)+' · Stok '+fm(x.r.stock)+'</div><div class="row"><div class="ed"><input type="text" class="sk" data-mp="'+x.mp+'" data-k="'+esc(x.key)+'" placeholder="T-Soft ürününü ara veya barkod yaz"><div class="sg" hidden></div></div><button class="p sb">Eşleştir</button><select class="tgs" data-mp="'+x.mp+'" data-k="'+esc(x.key)+'"><option value="">Etiket yok</option>'+TAGS.map(t=>'<option'+(curTag===t?' selected':'')+'>'+t+'</option>').join('')+'</select></div></div>'}).join(''):'<div class="em">Eşleşme bekleyen ürün yok.</div>';
   if(Uf.length>lim)h+='<p class="st">İlk '+lim+' ürün gösteriliyor; aramayı daralt.</p>';
+ }else if(!plan&&tab==='un'){
+  h=UNf.length?'<div class="sc"><table><tr><th>Pazaryeri</th><th>T-Soft Ürün Adı</th><th>T-Soft Kodu (SKU)</th><th>Barkod</th><th>T-Soft Fiyat</th><th>T-Soft Stok</th></tr>'+UNf.slice(0,lim).map(x=>
+  '<tr><td>'+chip(x.mp)+'</td><td><b>'+esc(x.t.name)+'</b></td><td><span class="tg">'+esc(x.t.code)+'</span></td><td>'+esc(x.t.barcode||'-')+'</td><td>₺'+fm(x.t.price)+'</td><td>'+fm(x.t.stock)+'</td></tr>').join('')+'</table></div>':'<div class="em">Tüm T-Soft ürünleri bu pazaryerinde açılmış! Açılmayan ürün bulunmuyor.</div>';
+  if(UNf.length>lim)h+='<p class="st">İlk '+lim+' ürün gösteriliyor; aramayı daralt.</p>';
+ }else if(!plan&&tab==='old'){
+  h=OLDf.length?OLDf.slice(0,lim).map(x=>{const curTag=(tags[x.mp]||{})[x.key]||OLD_TAG;return '<div class="card" style="--c:#64748b"><b>'+esc(x.r.name||'(adsız)')+'</b><div class="mt">'+chip(x.mp)+' &nbsp;Barkod: '+esc(x.r.barcode||'-')+' · Kod: '+esc(x.r.code||'-')+' · Fiyat '+fm(x.r.price)+' · Stok '+fm(x.r.stock)+'</div><div class="row"><select class="tgs" data-mp="'+x.mp+'" data-k="'+esc(x.key)+'"><option value="">Etiketi Kaldır (Aktife Al)</option>'+TAGS.map(t=>'<option'+(curTag===t?' selected':'')+'>'+t+'</option>').join('')+'</select></div></div>'}).join(''):'<div class="em">Eski / pasif olarak işaretlenmiş ürün yok.</div>';
+  if(OLDf.length>lim)h+='<p class="st">İlk '+lim+' ürün gösteriliyor; aramayı daralt.</p>';
  }else{
   h='<div class="row" style="margin-bottom:8px"><button id="ec">İş planını indir (CSV)</button></div>';
   h+=Tf.length?TAGS.map(t=>{const l=Tf.filter(x=>x.tag===t);return l.length?'<h3>'+t+' <span class="tg">'+l.length+'</span></h3><div class="sc"><table><tr><th>Pazaryeri</th><th>Ürün</th><th>Barkod / kod</th></tr>'+l.map(x=>'<tr><td>'+chip(x.mp)+'</td><td>'+esc(x.r.name)+'</td><td>'+esc(x.key)+'</td></tr>').join('')+'</table></div>':''}).join(''):'<div class="em">Etiketlenmiş ürün yok. "Eşleşme bekleyenler" sekmesinden etiket seç.</div>';
@@ -133,6 +200,7 @@ function render(){
  const ae=document.activeElement;if(ae&&ae.classList&&ae.classList.contains('sk'))return;
  $('view').innerHTML=h;
 }
+
 function setMap(mp,k,sku){sku=S(sku);if(!sku)return;(maps[mp]=maps[mp]||{})[k]=sku;sv('tm_maps',maps);document.activeElement&&document.activeElement.blur();render()}
 $('view').addEventListener('input',e=>{const i=e.target;if(!i.classList.contains('sk'))return;const s=i.nextElementSibling,v=norm(i.value);
  if(v.length<2){s.hidden=true;return}
@@ -150,13 +218,33 @@ $('df').onchange=e=>{df=e.target.checked;render()};
 $('mt').onclick=e=>{const b=e.target.closest('[data-m]');if(b){cur=b.dataset.m;tab='m';cm();render()}};
 $('tabs').onclick=e=>{if(e.target.dataset.t){tab=e.target.dataset.t;render()}};
 $('q').oninput=e=>{q=e.target.value;render()};
+
+$('markAllOld').onclick=()=>{
+ const U = calc(cur).u;
+ if(!U.length) return;
+ if(confirm(cur + ' için eşleşme bekleyen ' + U.length + ' ürünün tümü "Eski Ürün (Pasif)" olarak işaretlensin mi?')){
+  tags[cur] = tags[cur] || {};
+  U.forEach(x => { tags[cur][x.key] = OLD_TAG; });
+  sv('tm_tags', tags);
+  render();
+ }
+};
+
 function exDiff(list,name){
  const d=(a,b)=>a!=null&&b!=null&&a!==b?Math.round((a-b)*100)/100:'';
  const rows=[['Pazaryeri','Ürün adı','Pazaryeri SKU/kod','Pazaryeri barkod','T-Soft kodu','T-Soft barkod','Pazaryeri fiyat','T-Soft fiyat','Fiyat farkı','Pazaryeri stok','T-Soft stok','Stok farkı','Eşleşme']];
  list.forEach(x=>rows.push([x.mp,x.r.name||x.t.name,x.r.code,x.r.barcode,x.t.code,x.t.barcode,x.r.price,x.t.price,d(x.r.price,x.t.price),x.r.stock,x.t.stock,d(x.r.stock,x.t.stock),x.how]));
  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Farklar');XLSX.writeFile(wb,name)}
+
+function exUnlisted(list,name){
+ const rows=[['Pazaryeri','T-Soft Ürün Adı','T-Soft Stok Kodu (SKU)','T-Soft Barkod','T-Soft Fiyat','T-Soft Stok']];
+ list.forEach(x=>rows.push([x.mp,x.t.name,x.t.code,x.t.barcode,x.t.price,x.t.stock]));
+ const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Açılmayan Ürünler');XLSX.writeFile(wb,name)}
+
 $('exd').onclick=()=>{const l=calc(cur).m.filter(hasDiff);if(!l.length){alert('Fiyat veya stok farkı olan ürün yok.');return}exDiff(l,cur+'-fiyat-stok-farklari.xlsx')};
+$('exun').onclick=()=>{const l=calc(cur).un;if(!l.length){alert('Açılmayan ürün yok.');return}exUnlisted(l,cur+'-acilmayan-urunler.xlsx')};
 $('exa').onclick=()=>{let l=[];MPS.filter(m=>rep[m]).forEach(m=>{l=l.concat(calc(m).m.filter(hasDiff))});if(!l.length){alert('Fark yok ya da henüz rapor yüklenmedi.');return}exDiff(l,'tum-fiyat-stok-farklari.xlsx')};
+
 function dl(n,t,m){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:m}));a.download=n;a.click()}
 $('ex').onclick=()=>dl('manual_mappings.json',JSON.stringify({maps,tags},null,1),'application/json');
 $('im').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=x=>{try{const d=JSON.parse(x.target.result);[['maps',maps],['tags',tags]].forEach(([n,o])=>{Object.keys(d[n]||{}).forEach(m=>{o[m]=Object.assign(o[m]||{},d[n][m])})});sv('tm_maps',maps);sv('tm_tags',tags);render()}catch(err){alert('JSON okunamadı')}};r.readAsText(f);e.target.value=''};
