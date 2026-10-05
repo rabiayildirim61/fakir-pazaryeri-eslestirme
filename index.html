@@ -85,7 +85,25 @@ const norm=s=>String(s).toLowerCase().replace(/ı/g,'i').replace(/ğ/g,'g').repl
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const S=v=>v==null?'':String(v).trim();
 const BC=v=>typeof v==='number'?String(Math.round(v)):S(v).replace(/\s/g,'').replace(/\.0+$/,'');
-const NUM=v=>{if(v===''||v==null)return null;if(typeof v==='number')return v;let s=String(v).trim();if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');const n=parseFloat(s);return isNaN(n)?null:n};
+
+const NUM = v => {
+ if (v === '' || v == null) return null;
+ if (typeof v === 'number') {
+  return v > 100000 ? Math.round(v) / 100 : v;
+ }
+ let s = String(v).trim();
+ if (s.includes(',') && s.includes('.')) {
+  s = s.replace(/\./g, '').replace(',', '.');
+ } else if (s.includes(',')) {
+  s = s.replace(',', '.');
+ } else if ((s.match(/\./g) || []).length === 1 && s.split('.')[1].length === 2) {
+  s = s;
+ }
+ const n = parseFloat(s);
+ if (isNaN(n)) return null;
+ return n > 100000 ? Math.round(n) / 100 : n;
+};
+
 function find(h,c){const n=h.map(norm);for(const x of c){const i=n.indexOf(x);if(i>=0)return h[i]}for(const x of c){const i=n.findIndex(v=>v.includes(x));if(i>=0)return h[i]}return null}
 const F=[['code','SKU / stok kodu'],['barcode','Barkod'],['name','Ürün adı'],['price','Fiyat'],['stock','Stok']];
 function detect(h,mp){return{code:find(h,mp==='Hepsiburada'?['sku','hepsiburadasku','saticistokkodu','stokkodu']:['webserviskodu','tedarikcistokkodu','saticistokkodu','sellersku','stokkodu','sku']),
@@ -106,7 +124,7 @@ function repar(mp){const rows=raw[mp]||[];if(!rows.length)return;const h=Object.
 function cm(){const mp=cur,rows=raw[mp];if(!rows||!rows.length){$('cm').innerHTML='';$('stm').textContent='Yüklenmedi';return}
  const h=Object.keys(rows[0]);$('stm').innerHTML='<span class="ok">'+mp+': '+(rep[mp]||[]).length+' ürün</span>';
  $('cm').innerHTML=F.map(([k,l])=>'<label class="st">'+l+' <select class="cs" data-k="'+k+'"><option value="">-</option>'+h.map(x=>'<option'+(sel[mp][k]===x?' selected':'')+'>'+esc(x)+'</option>').join('')+'</select></label>').join('')}
-const hasDiff=x=>(x.r.price!=null&&x.t.price!=null&&x.r.price!==x.t.price)||(x.r.stock!=null&&x.t.stock!=null&&x.r.stock!==x.t.stock);
+const hasDiff=x=>(x.r.price!=null&&x.t.price!=null&&Math.abs(x.r.price-x.t.price)>0.01)||(x.r.stock!=null&&x.t.stock!=null&&x.r.stock!==x.t.stock);
 
 const isEbioOrDelonghi=t=>{
  const code = S(t.code);
@@ -164,8 +182,9 @@ function calc(mp){
 }
 
 const match=x=>!q||norm((x.r?x.r.name:'')+(x.r?x.r.barcode:'')+(x.r?x.r.code:'')+(x.t?x.t.name+x.t.code+x.t.barcode:'')).includes(norm(q));
-const fm=n=>n==null?'-':n.toLocaleString('tr-TR');
-function dc(a,b){return a!=null&&b!=null&&a!==b?' class="d"':''}
+const fmP=n=>n==null?'-':n.toLocaleString('tr-TR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const fmS=n=>n==null?'-':Math.round(n).toLocaleString('tr-TR');
+function dc(a,b){return a!=null&&b!=null&&Math.abs(a-b)>0.01?' class="d"':''}
 
 function render(){
  const plan=cur==='plan',has=!!rep[cur];
@@ -198,21 +217,21 @@ function render(){
  if(!plan&&!has)h='<div class="em">'+cur+' raporunu yükle'+(ts.length?'':' (önce T-Soft listesini yükle)')+'.</div>';
  else if(!plan&&tab==='m'){
   h=Mf.length?'<div class="sc"><table><tr><th>Pazaryeri</th><th>Ürün</th><th>Barkod</th><th>T-Soft (kod / barkod)</th><th>Eşleşme</th><th>Fiyat (PY / T-Soft)</th><th>Stok (PY / T-Soft)</th></tr>'+Mf.slice(0,lim).map(x=>
-  '<tr><td>'+chip(x.mp)+'</td><td>'+esc(x.r.name||x.t.name)+'<div class="st">'+esc(x.r.code)+'</div></td><td>'+esc(x.r.barcode)+'</td><td>'+esc(x.t.code)+'<div class="st">'+esc(x.t.barcode)+'</div></td><td>'+x.how+(x.how==='Manuel'?' <button class="rm" data-mp="'+x.mp+'" data-k="'+esc(x.key)+'">Kaldır</button>':'')+'</td><td><span'+dc(x.r.price,x.t.price)+'>'+fm(x.r.price)+' / '+fm(x.t.price)+'</span></td><td><span'+dc(x.r.stock,x.t.stock)+'>'+fm(x.r.stock)+' / '+fm(x.t.stock)+'</span></td></tr>').join('')+'</table></div>':'<div class="em">Eşleşen ürün yok.</div>';
+  '<tr><td>'+chip(x.mp)+'</td><td>'+esc(x.r.name||x.t.name)+'<div class="st">'+esc(x.r.code)+'</div></td><td>'+esc(x.r.barcode)+'</td><td>'+esc(x.t.code)+'<div class="st">'+esc(x.t.barcode)+'</div></td><td>'+x.how+(x.how==='Manuel'?' <button class="rm" data-mp="'+x.mp+'" data-k="'+esc(x.key)+'">Kaldır</button>':'')+'</td><td><span'+dc(x.r.price,x.t.price)+'>'+fmP(x.r.price)+' / '+fmP(x.t.price)+'</span></td><td><span'+(x.r.stock!==x.t.stock?' class="d"':'')+'>'+fmS(x.r.stock)+' / '+fmS(x.t.stock)+'</span></td></tr>').join('')+'</table></div>':'<div class="em">Eşleşen ürün yok.</div>';
   if(Mf.length>lim)h+='<p class="st">İlk '+lim+' satır gösteriliyor; aramayı daralt.</p>';
  }else if(!plan&&tab==='u'){
-  h=Uf.length?Uf.slice(0,lim).map(x=>{const curTag=(tags[x.mp]||{})[x.key]||'';return '<div class="card" style="--c:'+MC[x.mp]+'"><b>'+esc(x.r.name||'(adsız)')+'</b><div class="mt">'+chip(x.mp)+' &nbsp;Barkod: '+esc(x.r.barcode||'-')+' · Kod: '+esc(x.r.code||'-')+' · Fiyat '+fm(x.r.price)+' · Stok '+fm(x.r.stock)+'</div><div class="row"><div class="ed"><input type="text" class="sk" data-mp="'+x.mp+'" data-k="'+esc(x.key)+'" placeholder="T-Soft ürününü ara veya barkod yaz"><div class="sg" hidden></div></div><button class="p sb">Eşleştir</button><select class="tgs" data-mp="'+x.mp+'" data-k="'+esc(x.key)+'"><option value="">Etiket yok</option>'+TAGS.map(t=>'<option'+(curTag===t?' selected':'')+'>'+t+'</option>').join('')+'</select></div></div>'}).join(''):'<div class="em">Eşleşme bekleyen ürün yok.</div>';
+  h=Uf.length?Uf.slice(0,lim).map(x=>{const curTag=(tags[x.mp]||{})[x.key]||'';return '<div class="card" style="--c:'+MC[x.mp]+'"><b>'+esc(x.r.name||'(adsız)')+'</b><div class="mt">'+chip(x.mp)+' &nbsp;Barkod: '+esc(x.r.barcode||'-')+' · Kod: '+esc(x.r.code||'-')+' · Fiyat '+fmP(x.r.price)+' · Stok '+fmS(x.r.stock)+'</div><div class="row"><div class="ed"><input type="text" class="sk" data-mp="'+x.mp+'" data-k="'+esc(x.key)+'" placeholder="T-Soft ürününü ara veya barkod yaz"><div class="sg" hidden></div></div><button class="p sb">Eşleştir</button><select class="tgs" data-mp="'+x.mp+'" data-k="'+esc(x.key)+'"><option value="">Etiket yok</option>'+TAGS.map(t=>'<option'+(curTag===t?' selected':'')+'>'+t+'</option>').join('')+'</select></div></div>'}).join(''):'<div class="em">Eşleşme bekleyen ürün yok.</div>';
   if(Uf.length>lim)h+='<p class="st">İlk '+lim+' ürün gösteriliyor; aramayı daralt.</p>';
  }else if(!plan&&tab==='un'){
   h=UNf.length?'<div class="sc"><table><tr><th>Pazaryeri</th><th>T-Soft Ürün Adı</th><th>T-Soft Kodu (SKU)</th><th>Barkod</th><th>T-Soft Fiyat</th><th>T-Soft Stok</th><th>İşlem</th></tr>'+UNf.slice(0,lim).map(x=>
-  '<tr><td>'+chip(x.mp)+'</td><td><b>'+esc(x.t.name)+'</b></td><td><span class="tg">'+esc(x.t.code)+'</span></td><td>'+esc(x.t.barcode||'-')+'</td><td>₺'+fm(x.t.price)+'</td><td>'+fm(x.t.stock)+'</td><td><select class="tgs" data-mp="'+x.mp+'" data-k="'+esc(x.key)+'"><option value="">Aksiyon Seç</option><option value="'+OLD_TAG+'">Eski Ürün (Pasif)</option></select></td></tr>').join('')+'</table></div>':'<div class="em">Pazaryerinde açılacak yeni T-Soft ürünü bulunmuyor.</div>';
+  '<tr><td>'+chip(x.mp)+'</td><td><b>'+esc(x.t.name)+'</b></td><td><span class="tg">'+esc(x.t.code)+'</span></td><td>'+esc(x.t.barcode||'-')+'</td><td>₺'+fmP(x.t.price)+'</td><td>'+fmS(x.t.stock)+'</td><td><select class="tgs" data-mp="'+x.mp+'" data-k="'+esc(x.key)+'"><option value="">Aksiyon Seç</option><option value="'+OLD_TAG+'">Eski Ürün (Pasif)</option></select></td></tr>').join('')+'</table></div>':'<div class="em">Pazaryerinde açılacak yeni T-Soft ürünü bulunmuyor.</div>';
   if(UNf.length>lim)h+='<p class="st">İlk '+lim+' ürün gösteriliyor; aramayı daralt.</p>';
  }else if(!plan&&tab==='ebio'){
   h=EBIOf.length?'<div class="sc"><table><tr><th>Pazaryeri</th><th>T-Soft Ürün Adı</th><th>T-Soft Kodu (SKU)</th><th>Barkod</th><th>T-Soft Fiyat</th><th>T-Soft Stok</th></tr>'+EBIOf.slice(0,lim).map(x=>
-  '<tr><td>'+chip(x.mp)+'</td><td><b>'+esc(x.t.name)+'</b></td><td><span class="tg">'+esc(x.t.code)+'</span></td><td>'+esc(x.t.barcode||'-')+'</td><td>₺'+fm(x.t.price)+'</td><td>'+fm(x.t.stock)+'</td></tr>').join('')+'</table></div>':'<div class="em">Pazaryerinde açılmamış Ebio veya Delonghi ürünü bulunmuyor.</div>';
+  '<tr><td>'+chip(x.mp)+'</td><td><b>'+esc(x.t.name)+'</b></td><td><span class="tg">'+esc(x.t.code)+'</span></td><td>'+esc(x.t.barcode||'-')+'</td><td>₺'+fmP(x.t.price)+'</td><td>'+fmS(x.t.stock)+'</td></tr>').join('')+'</table></div>':'<div class="em">Pazaryerinde açılmamış Ebio veya Delonghi ürünü bulunmuyor.</div>';
   if(EBIOf.length>lim)h+='<p class="st">İlk '+lim+' ürün gösteriliyor; aramayı daralt.</p>';
  }else if(!plan&&tab==='old'){
-  h=OLDf.length?OLDf.slice(0,lim).map(x=>{const curTag=(tags[x.mp]||{})[x.key]||OLD_TAG;return '<div class="card" style="--c:#64748b"><b>'+esc(x.r.name||'(adsız)')+'</b><div class="mt">'+chip(x.mp)+' &nbsp;Barkod: '+esc(x.r.barcode||'-')+' · Kod: '+esc(x.r.code||'-')+' · Fiyat '+fm(x.r.price)+' · Stok '+fm(x.r.stock)+'</div><div class="row"><select class="tgs" data-mp="'+x.mp+'" data-k="'+esc(x.key)+'"><option value="">Etiketi Kaldır (Aktife Al)</option>'+TAGS.map(t=>'<option'+(curTag===t?' selected':'')+'>'+t+'</option>').join('')+'</select></div></div>'}).join(''):'<div class="em">Eski / pasif olarak işaretlenmiş ürün yok.</div>';
+  h=OLDf.length?OLDf.slice(0,lim).map(x=>{const curTag=(tags[x.mp]||{})[x.key]||OLD_TAG;return '<div class="card" style="--c:#64748b"><b>'+esc(x.r.name||'(adsız)')+'</b><div class="mt">'+chip(x.mp)+' &nbsp;Barkod: '+esc(x.r.barcode||'-')+' · Kod: '+esc(x.r.code||'-')+' · Fiyat '+fmP(x.r.price)+' · Stok '+fmS(x.r.stock)+'</div><div class="row"><select class="tgs" data-mp="'+x.mp+'" data-k="'+esc(x.key)+'"><option value="">Etiketi Kaldır (Aktife Al)</option>'+TAGS.map(t=>'<option'+(curTag===t?' selected':'')+'>'+t+'</option>').join('')+'</select></div></div>'}).join(''):'<div class="em">Eski / pasif olarak işaretlenmiş ürün yok.</div>';
   if(OLDf.length>lim)h+='<p class="st">İlk '+lim+' ürün gösteriliyor; aramayı daralt.</p>';
  }else{
   h='<div class="row" style="margin-bottom:8px"><button id="ec">İş planını indir (CSV)</button></div>';
